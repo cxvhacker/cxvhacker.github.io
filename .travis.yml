@@ -4,17 +4,20 @@ node_js:
   - 10
 cache: npm
 branches:
-only:
-  - hexo-source # store source code of hexo in hexo-source branch
+  only:
+    - hexo-source # store source code of hexo in hexo-source branch
+install:
+  - npm install -g hexo
+  - npm install
 script:
+  - hexo clean
   - hexo generate
 deploy:
-provider: pages
-skip-cleanup: true
-github-token: $GH_TOKEN
-keep-history: true
-# added
-target_branch: master # generate static files to master
-on:
-branch: hexo-source # source code of hexo
-local-dir: public
+  provider: pages
+  skip-cleanup: true
+  github-token: $GH_TOKEN
+  keep-history: true
+  on:
+    branch: hexo-source # source code of hexo
+  target_branch: master # generate static files to master
+  local-dir: public
