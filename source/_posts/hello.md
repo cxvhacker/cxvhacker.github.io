@@ -4,4 +4,4 @@ author: eric02
 excerpt: hello
 ---
 
-hello blog.  
+hello blog, enjoy.
