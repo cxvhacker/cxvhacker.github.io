@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"cxvhacker.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="使用python编写，能够批量解压缩，并将解压后的文件自动上传VT获取查杀结果">
+<meta property="og:type" content="article">
+<meta property="og:title" content="快速辨黑白脚本-python">
+<meta property="og:url" content="https://cxvhacker.github.io/2020/05/22/sunyu/python-vt/index.html">
+<meta property="og:site_name" content="辰信安全基地">
+<meta property="og:description" content="使用python编写，能够批量解压缩，并将解压后的文件自动上传VT获取查杀结果">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/sunyu/python-vt/7z%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/sunyu/python-vt/ApiKey-1.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/sunyu/python-vt/ApiKey-2.png">
+<meta property="article:published_time" content="2020-05-22T15:13:00.000Z">
+<meta property="article:modified_time" content="2020-06-03T02:56:46.204Z">
+<meta property="article:author" content="vhacker">
+<meta property="article:tag" content="python">
+<meta property="article:tag" content="脚本">
+<meta property="article:tag" content="virustotal">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cxvhacker.github.io/pic/sunyu/python-vt/7z%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F.png">
+
+<link rel="canonical" href="https://cxvhacker.github.io/2020/05/22/sunyu/python-vt/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>快速辨黑白脚本-python | 辰信安全基地</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">辰信安全基地</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">严肃工作  活泼生活</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://cxvhacker.github.io/2020/05/22/sunyu/python-vt/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="vhacker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="辰信安全基地">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          快速辨黑白脚本-python
+        </h1>
+
+        <div class="post-meta">
+          
+            <i class="fa fa-thumb-tack"></i>
+            <font color=7D26CD>置顶</font>
+            <span class="post-meta-divider">|</span>
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-22 15:13:00" itemprop="dateCreated datePublished" datetime="2020-05-22T15:13:00+00:00">2020-05-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-06-03 02:56:46" itemprop="dateModified" datetime="2020-06-03T02:56:46+00:00">2020-06-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%84%9A%E6%9C%AC%E5%B7%A5%E5%85%B7/" itemprop="url" rel="index"><span itemprop="name">脚本工具</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%84%9A%E6%9C%AC%E5%B7%A5%E5%85%B7/python/" itemprop="url" rel="index"><span itemprop="name">python</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="整体描述"><a href="#整体描述" class="headerlink" title="整体描述"></a>整体描述</h1><p>因为工作原因，我经常需要通过VirusTotal简单确认样本的黑白，但大多数样本获取时到时是一个加密的压缩包。解压缩，上传样本，获取vt扫描信息，这是一个重复且费时间的一个事情，如果写一个脚本就会简单快速很多。<br>整个脚本，可以分为两大部分，解压部分，上传扫描部分，这两部分又都涉及文件路径获取。所以整个脚本可以分成四个部分，文件操作部分，解压部分，VT扫描部分，汇总部分。</p>
+<h1 id="文件操作部分"><a href="#文件操作部分" class="headerlink" title="文件操作部分"></a>文件操作部分</h1><ul>
+<li>需要导入的包<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">import os</span><br></pre></td></tr></table></figure></li>
+<li>下属方法</li>
+</ul>
+<ol>
+<li>获取文件夹路径下的所有文件和文件夹路径并打印(会进行迭代遍历所有的) <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">def traversalDirectory(directoyrPath, print_Str &#x3D; False):</span><br><span class="line">    # 获取当前文件夹路径</span><br><span class="line">    directoyrPath_ &#x3D; directoyrPath</span><br><span class="line">    if os.path.isfile(directoyrPath):</span><br><span class="line">        directoyrPath_ &#x3D; os.path.dirname(directoyrPath)</span><br><span class="line">    # 获取当前文件夹下的所有文件和目录</span><br><span class="line">    fileAndDirectoyrList &#x3D; os.listdir(directoyrPath_)</span><br><span class="line">    # 将当前文件夹下的文件路径加入到文件路径列表</span><br><span class="line">    # 将当前文件夹下的文件夹路径加入到文件夹路径列表</span><br><span class="line">    fileList &#x3D; []</span><br><span class="line">    dirList &#x3D; []</span><br><span class="line">    for fileOrDirectoyr in fileAndDirectoyrList:</span><br><span class="line">        if os.path.isfile(os.path.join(directoyrPath_, fileOrDirectoyr)):</span><br><span class="line">            fileList.append(os.path.join(directoyrPath_, fileOrDirectoyr))</span><br><span class="line">        else:</span><br><span class="line">            dirList.append(os.path.join(directoyrPath_, fileOrDirectoyr))</span><br><span class="line">            dir_fileOrDirectoyr_ &#x3D; traversalDirectory(os.path.join(directoyrPath_,  fileOrDirectoyr))</span><br><span class="line">            fileList &#x3D; fileList + dir_fileOrDirectoyr_[&quot;fileLsit&quot;]</span><br><span class="line">            dirList &#x3D; dirList + dir_fileOrDirectoyr_[&quot;dirLsit&quot;]</span><br><span class="line">    if print_Str:</span><br><span class="line">        for filePath in fileList:</span><br><span class="line">            print(&quot;文件：&quot;, filePath)</span><br><span class="line">        for dirPath in dirList:</span><br><span class="line">            print(&quot;文件夹：&quot;, dirPath)</span><br><span class="line">    fileOrDirectoyr_ &#x3D; &#123;&quot;fileLsit&quot;: fileList, &quot;dirLsit&quot;: dirList&#125;</span><br><span class="line">    return fileOrDirectoyr_</span><br></pre></td></tr></table></figure></li>
+<li>获取文件夹路径下的所有文件路径并打印<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">def traversalDirectory_file(directoyrPath, print_Str &#x3D; False):</span><br><span class="line">    # 获取文件夹路径</span><br><span class="line">    directoyrPath_ &#x3D; directoyrPath</span><br><span class="line">    if os.path.isfile(directoyrPath):</span><br><span class="line">        directoyrPath_ &#x3D; os.path.dirname(directoyrPath)</span><br><span class="line">    # 获取当前文件夹下的所有文件和目录</span><br><span class="line">    fileAndDirectoyrList &#x3D; os.listdir(directoyrPath_)</span><br><span class="line">    # 将当前文件夹下的文件路径加入到文件路径列表</span><br><span class="line">    fileList &#x3D; []</span><br><span class="line">    for fileOrDirectoyr in fileAndDirectoyrList:</span><br><span class="line">        if os.path.isfile(os.path.join(directoyrPath_, fileOrDirectoyr)):</span><br><span class="line">            fileList.append(os.path.join(directoyrPath_, fileOrDirectoyr))</span><br><span class="line">    if print_Str:</span><br><span class="line">        for filePath in fileList:</span><br><span class="line">            print(&quot;文件：&quot;, filePath)</span><br><span class="line">    return fileList</span><br></pre></td></tr></table></figure></li>
+<li>获取文件名(extensionName-是否带拓展名，默认是带)<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">def getFileName(filePath, extensionName &#x3D; True):</span><br><span class="line">    if os.path.exists(filePath):</span><br><span class="line">        if os.path.isfile(filePath):</span><br><span class="line">            if extensionName:</span><br><span class="line">                return os.path.basename(filePath)</span><br><span class="line">            else:</span><br><span class="line">                return os.path.splitext(os.path.basename(filePath))[0]</span><br><span class="line">        else:</span><br><span class="line">            return &quot;&quot;</span><br><span class="line">    else:</span><br><span class="line">        print(filePath, &quot;不存在&quot;)</span><br><span class="line">        return &quot;&quot;</span><br></pre></td></tr></table></figure></li>
+<li>获取类型(其实就是获取文件拓展名)<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">def getFileType(filePath):</span><br><span class="line">    if os.path.exists(filePath):</span><br><span class="line">        if os.path.isfile(filePath):</span><br><span class="line">            return os.path.splitext(filePath)[1].split(&quot;.&quot;)[1]</span><br><span class="line">        else:</span><br><span class="line">            return &quot;&quot;</span><br><span class="line">    else:</span><br><span class="line">        print(filePath, &quot;不存在&quot;)</span><br><span class="line">        return &quot;&quot;</span><br></pre></td></tr></table></figure></li>
+<li>检查文件夹是否存在(make-当文件夹不存在时，是否创建，默认是不创建的)<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">def checkDir(path, make &#x3D; False, print_Str &#x3D; False):</span><br><span class="line">    if not os.path.exists(path) and make:</span><br><span class="line">        os.makedirs(path)</span><br><span class="line">        if print_Str:</span><br><span class="line">            print(path, &quot;不存在，但已创建&quot;)</span><br><span class="line">        return True</span><br><span class="line">    if os.path.exists(path) and os.path.isdir(path):</span><br><span class="line">        return True</span><br><span class="line">    else:</span><br><span class="line">        if print_Str:</span><br><span class="line">            print(path, &quot;不存在或不是文件夹&quot;)</span><br><span class="line">        return False</span><br></pre></td></tr></table></figure>
+<h1 id="解压部分"><a href="#解压部分" class="headerlink" title="解压部分"></a>解压部分</h1></li>
+</ol>
+<ul>
+<li>需要导入的包</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">import os</span><br><span class="line">import zipfile</span><br><span class="line">import rarfile</span><br><span class="line">import 文件操作</span><br></pre></td></tr></table></figure>
+<ul>
+<li>下属方法</li>
+</ul>
+<p>1.解压RAR</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">def unRar( filePath, unFilePath, filePassword &#x3D; None):</span><br><span class="line">    if not rarfile.is_rarfile(filePath):</span><br><span class="line">        print(文件操作.getFileName(filePath), &quot;不是RAR文件&quot;)</span><br><span class="line">        return False</span><br><span class="line">    rarfile.UNRAR_TOOL &#x3D; &#39;C:\\Program Files\\WinRAR\\UnRAR.exe&#39;</span><br><span class="line">    rarfileObj &#x3D; rarfile.RarFile(filePath)</span><br><span class="line">    if rarfileObj.needs_password() and filePassword !&#x3D; None:</span><br><span class="line">        rarfileObj.setpassword(filePassword)</span><br><span class="line">    elif rarfileObj.needs_password() and filePassword &#x3D;&#x3D; None:</span><br><span class="line">        print(filePath, &quot;需要密码&quot;)</span><br><span class="line">        rarfileObj.close()</span><br><span class="line">        return False</span><br><span class="line">    try:</span><br><span class="line">        rarfileObj.extractall(unFilePath)</span><br><span class="line">        return True</span><br><span class="line">    except rarfile.Error as e:</span><br><span class="line">        print(文件操作.getFileName(filePath), &quot;解压失败&quot;)</span><br><span class="line">        print(&quot;错误提示：&quot;, e)</span><br><span class="line">    finally:</span><br><span class="line">        rarfileObj.close()</span><br><span class="line">    return False</span><br></pre></td></tr></table></figure>
+<p>在这个函数中需要注意<strong>rarfile.UNRAR_TOOL</strong>这个属性的值，因为rar算法并不公开所以，需要先下载<strong>安装winRAR然后将WinRAR中的UnRAR.exe路径填写到此处</strong>。不然一定会报错。</p>
+<p>2.解压zip</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">def unZip( filePath, unFilePath, filePassword &#x3D; None):</span><br><span class="line">    if not zipfile.is_zipfile(filePath):</span><br><span class="line">        print(文件操作.getFileName(filePath), &quot;不是ZIP文件&quot;)</span><br><span class="line">        return False</span><br><span class="line">    zipFileObj &#x3D; zipfile.ZipFile(filePath)</span><br><span class="line">    zipFileObj.setpassword(filePassword)</span><br><span class="line">    try:</span><br><span class="line">        zipFileObj.extractall(unFilePath)</span><br><span class="line">        return True</span><br><span class="line">    except zipfile.BadZipFile as e:</span><br><span class="line">        print(文件操作.getFileName(filePath), &quot;解压失败&quot;)</span><br><span class="line">        print(&quot;错误提示：&quot;, e)</span><br><span class="line">    finally:</span><br><span class="line">        zipFileObj.close()</span><br><span class="line">    return False</span><br></pre></td></tr></table></figure>
+<p>3.解压7z</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">def un7z( filePath, unFilePath, filePassword &#x3D; None):</span><br><span class="line">    unState &#x3D; False</span><br><span class="line">    cmd &#x3D; &quot;7z x &quot; + os.path.abspath(filePath) + &quot; -y &quot; + &quot; -o&quot; +  os.path.abspath(unFilePath)</span><br><span class="line">    if filePassword !&#x3D; None:</span><br><span class="line">        cmd &#x3D; &quot;7z x &quot;+os.path.abspath(filePath)+&quot; -p&quot;+filePassword+&quot; -y &quot;+&quot;  -o&quot;+os.path.abspath(unFilePath)</span><br><span class="line">    if os.system(cmd) &#x3D;&#x3D; 0:</span><br><span class="line">        unState &#x3D; True</span><br><span class="line">    if unState:</span><br><span class="line">        return True</span><br><span class="line">    else:</span><br><span class="line">        print(文件操作.getFileName(filePath), &quot;解压失败，可能是密码错误&quot;)</span><br><span class="line">        return False</span><br></pre></td></tr></table></figure>
+<p> 这个函数需要注意，需要<strong>提前安装7z</strong>，并在<strong>用户环境变量中添加7z安装路径</strong>。因为是通过命令行调用7z所以需要提前设置环境变量，经过尝试仅在系统环境变量中添加7z安装路径时，os.system这个函数并不能正确调用7z，只有在用户环境变量中也添加7z安装路径才能解决这个问题。<br><img src="/pic/sunyu/python-vt/7z%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F.png" alt="ALt text"></p>
+<p>4.根据不同的类型进行解压</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">def switch_Unzip( fileType, filePath, unFilePath, filePassword&#x3D;None):</span><br><span class="line">    # 把后缀名全部转成小写然后进行对比</span><br><span class="line">    if fileType.lower() &#x3D;&#x3D; &quot;zip&quot;:</span><br><span class="line">        unZip(filePath, unFilePath, filePassword.encode())</span><br><span class="line">    elif fileType.lower() &#x3D;&#x3D; &quot;rar&quot;:</span><br><span class="line">        unRar(filePath, unFilePath, filePassword)</span><br><span class="line">    elif fileType.lower() &#x3D;&#x3D; &quot;7z&quot;:</span><br><span class="line">        un7z(filePath, unFilePath, filePassword)</span><br></pre></td></tr></table></figure>
+<p>5.整合-如果文件名称中带密码则尝试自动填入</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">def unDirectory(zipPath, uZipPath, password&#x3D;&quot;infected&quot;):</span><br><span class="line">    filePathList &#x3D; 文件操作.traversalDirectory_file(zipPath)</span><br><span class="line">    文件操作.checkDir(uZipPath, True, True)</span><br><span class="line">    for filePath in filePathList:</span><br><span class="line">        print(&quot;正在解压&quot;, 文件操作.getFileName(filePath))</span><br><span class="line">        fileType &#x3D; 文件操作.getFileType(filePath)</span><br><span class="line">        uZipFilePath &#x3D; os.path.join(uZipPath, 文件操作.getFileName(filePath, False))</span><br><span class="line">        try:</span><br><span class="line">            fileNameStr &#x3D; 文件操作.getFileName(filePath, False)</span><br><span class="line">            passwordStr_index &#x3D; fileNameStr.index(&quot;密码&quot;)+2</span><br><span class="line">            passwordStr &#x3D; fileNameStr[passwordStr_index:]</span><br><span class="line">            if passwordStr[0:1] &#x3D;&#x3D; &quot;:&quot;:</span><br><span class="line">                passwordStr_index &#x3D; passwordStr_index+1</span><br><span class="line">                passwordStr &#x3D; fileNameStr[passwordStr_index:]</span><br><span class="line">            switch_Unzip(fileType, filePath, uZipFilePath, passwordStr)</span><br><span class="line">        except ValueError as e:</span><br><span class="line">            switch_Unzip(fileType, filePath, uZipFilePath, password)</span><br><span class="line">        if not 文件操作.checkDir(uZipFilePath):</span><br><span class="line">            print(文件操作.getFileName(filePath), &quot;解压失败&quot;)</span><br></pre></td></tr></table></figure>
+<h1 id="VT扫描部分"><a href="#VT扫描部分" class="headerlink" title="VT扫描部分"></a>VT扫描部分</h1><ul>
+<li>需要导入的包<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">from virustotal_python import Virustotal</span><br><span class="line">import hashlib</span><br><span class="line">import os.path</span><br><span class="line">import time</span><br><span class="line">import 文件操作</span><br></pre></td></tr></table></figure></li>
+<li>初始化<br>星号部分为你的VT账号的API_Key<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># 初始化对象，填入API_Key</span><br><span class="line">vtotal &#x3D; Virustotal(&quot;***************************************************************&quot;)</span><br></pre></td></tr></table></figure>
+登录VT后，点击API key<br><img src="/pic/sunyu/python-vt/ApiKey-1.png" alt="ALt text"><br>在新转到的页面中，红框部分即为你自己的API key，黄框部分为通过该API key进行请求的速率，如图所示普通免费用户为<strong>每分钟4次请求，每天1000次请求，每个与30000次请求</strong>。<br><img src="/pic/sunyu/python-vt/ApiKey-2.png" alt="ALt text"><br>这里需要注意一点的是，这是按照<strong>网络请求来消耗次数</strong>的，那怕提交的是重复的样本哈希值也会消耗次数。</li>
+<li>下属方法</li>
+</ul>
+<p>1.扫描单个文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">def scanfile(filePath):</span><br><span class="line">    file_hash &#x3D; None</span><br><span class="line">    if os.path.isfile(filePath):</span><br><span class="line">        f &#x3D; open(filePath, &quot;rb&quot;)</span><br><span class="line">        f_buffer &#x3D; f.read()</span><br><span class="line">        f.close()</span><br><span class="line">        file_hash &#x3D; hashlib.md5(f_buffer).hexdigest()</span><br><span class="line">    file_hash_list &#x3D; []</span><br><span class="line">    file_hash_list.append(file_hash)</span><br><span class="line">    try:</span><br><span class="line">        resp &#x3D; vtotal.file_report(file_hash_list)</span><br><span class="line">    except Exception as e:</span><br><span class="line">        print(e)</span><br><span class="line">        time.sleep(5)</span><br><span class="line">        try:</span><br><span class="line">            resp &#x3D; vtotal.file_report(file_hash_list)</span><br><span class="line">        except Exception as err:</span><br><span class="line">            print(&quot;重试失败&quot;)</span><br><span class="line">            print(err)</span><br><span class="line">            return None</span><br><span class="line">    file_report_num &#x3D; 0</span><br><span class="line">    while resp[&quot;status_code&quot;] &#x3D;&#x3D; 204:</span><br><span class="line">        print(&quot;超过请求速率&quot;,filePath,&quot;将在60S后重试&quot;)</span><br><span class="line">        time.sleep(60)</span><br><span class="line">        resp &#x3D; vtotal.file_report(file_hash_list)</span><br><span class="line">        file_report_num &#x3D; file_report_num + 1</span><br><span class="line">        if file_report_num &#x3D;&#x3D; 4:</span><br><span class="line">            return resp</span><br><span class="line">    # pprint(resp)</span><br><span class="line">    if resp[&quot;json_resp&quot;][&quot;response_code&quot;] &#x3D;&#x3D; 0:</span><br><span class="line">        resp &#x3D; vtotal.file_scan(filePath)</span><br><span class="line">        if resp[&quot;json_resp&quot;][&quot;response_code&quot;] &#x3D;&#x3D; 0:</span><br><span class="line">            print(&quot;上传失败&quot;)</span><br><span class="line">            return None</span><br><span class="line">    print(filePath, resp[&quot;json_resp&quot;][&quot;positives&quot;])</span><br><span class="line">    return resp</span><br></pre></td></tr></table></figure>
+<p>先计算文件哈希值，然后使用该文件哈希值进行请求，如果文件哈希在VT上未记录则上传文件，因为上传文件进行检测，其扫描优先级比较低，会比较耗时间，所以需要等一段时候后重新通过哈希值获取检测结果。<br>在实际测试中发现file_report该API可能会因为网络原因出错，所以此处做了错误处理，等待5s后重新尝试获取检测结果。(当我写好此处错误处理后，再进行测试时再未发现会抛出网络错误，不知道是什么原因，所以暂时这样处理)</p>
+<p>2.批量上传文件，返回需要重新检查的文件的路径</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">def scanfiles(filepaths):</span><br><span class="line">    testagain &#x3D; []</span><br><span class="line">    for file_path in filepaths:</span><br><span class="line">        resp &#x3D; scanfile(file_path)</span><br><span class="line">        if resp &#x3D;&#x3D; None:</span><br><span class="line">            print(file_path, &quot;上传失败&quot;)</span><br><span class="line">        elif resp[&quot;status_code&quot;] &#x3D;&#x3D; 204:</span><br><span class="line">            print(file_path, &quot;扫描失败&quot;)</span><br><span class="line">        elif not (&quot;positives&quot; in resp[&quot;json_resp&quot;]):</span><br><span class="line">            print(file_path, &quot;排队等待重新上传&quot;)</span><br><span class="line">            testagain.append(file_path)</span><br><span class="line">        time.sleep(10)</span><br><span class="line">    return testagain</span><br></pre></td></tr></table></figure>
+<p>3.扫描指定文件夹下的文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">def scanfiles(dirPath):</span><br><span class="line">    filesAndDirectoyrs &#x3D; 文件操作.traversalDirectory(dirPath)</span><br><span class="line">    filesPath &#x3D; filesAndDirectoyrs[&quot;fileLsit&quot;]</span><br><span class="line">    testagain &#x3D; virustotal.scanfiles(filesPath)</span><br><span class="line">    if len(testagain) !&#x3D; 0:</span><br><span class="line">        for filePath in testagain:</span><br><span class="line">            print(filePath, &quot;请稍后重新查询&quot;)</span><br></pre></td></tr></table></figure>
+<h1 id="汇总部分"><a href="#汇总部分" class="headerlink" title="汇总部分"></a>汇总部分</h1><ul>
+<li>需要导入的包<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">import 解压</span><br><span class="line">import os</span><br><span class="line">import getopt</span><br><span class="line">import sys</span><br><span class="line">import virustotal</span><br></pre></td></tr></table></figure></li>
+<li>下属方法<br>主函数-根据命令行参数进行操作<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">if __name__ &#x3D;&#x3D; &#39;__main__&#39;:</span><br><span class="line">    try:</span><br><span class="line">        opts, args &#x3D; getopt.getopt(sys.argv[1:], &quot;-z:-u:-p:-s-S:&quot;)</span><br><span class="line">    except getopt.GetoptError as err:</span><br><span class="line">        print(err.opt, &quot;参数填写错误&quot;)</span><br><span class="line">        sys.exit(2)</span><br><span class="line">    passwordStr &#x3D; &quot;&quot;</span><br><span class="line">    zipPath &#x3D; &quot;&quot;</span><br><span class="line">    unzipPath &#x3D; &quot;&quot;</span><br><span class="line">    scan &#x3D; &quot;&quot;</span><br><span class="line">    scan_bool &#x3D; False</span><br><span class="line">    for opt_name, opt_value in opts:</span><br><span class="line">        if opt_name &#x3D;&#x3D; &quot;-z&quot;:</span><br><span class="line">            zipPath &#x3D; opt_value</span><br><span class="line">            print(zipPath)</span><br><span class="line">        if opt_name &#x3D;&#x3D; &quot;-u&quot;:</span><br><span class="line">            unzipPath &#x3D; opt_value</span><br><span class="line">            print(unzipPath)</span><br><span class="line">        if opt_name &#x3D;&#x3D; &quot;-p&quot;:</span><br><span class="line">            passwordStr &#x3D; opt_value</span><br><span class="line">            print(passwordStr)</span><br><span class="line">        if opt_name &#x3D;&#x3D; &quot;-S&quot;:</span><br><span class="line">            scan &#x3D; opt_value</span><br><span class="line">            print(scan)</span><br><span class="line">        if opt_name &#x3D;&#x3D; &quot;-s&quot;:</span><br><span class="line">            scan_bool &#x3D; True</span><br><span class="line">    if zipPath !&#x3D; &quot;&quot;:</span><br><span class="line">        if os.path.isdir(zipPath):</span><br><span class="line">            解压.unDirectory(zipPath, unzipPath)</span><br><span class="line">        if scan_bool:</span><br><span class="line">            virustotal.scanfiles(unzipPath)</span><br><span class="line">    if scan !&#x3D; &quot;&quot;:</span><br><span class="line">        if os.path.isdir(scan):</span><br><span class="line">           virustotal.scanfiles(scan)</span><br></pre></td></tr></table></figure>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1></li>
+<li>总结<br>  1.大体完成了批量解压文件，然后将解压的文件上传VT获取报毒的引擎数量这个功能<br>  2.文件操作部分，主要用于遍历文件夹路径下的文件，并将文件路径返回，以及一些获取文件类型（后缀名）等操作<br>  3.解压部分，因为主要面对的三种类型的压缩文件并没有一个统一的库可以使用，所以这里使用了3种方法来应对这三种压缩文件。<br>  4.vt扫描部分，主要是调用现有API来获取扫描结果，并对获取的结果进行一定程度上的筛选，比如现在只打印报毒引擎数，就是筛选后的结果。<br>  5.把不同的功能分割成了不同的模块，在一定程度上降低了代码的耦合度，使得修改更加容易</li>
+<li>不足<br>  1.使用起来还是有一些繁琐，需要在代码中写死路径，APIkey，在灵活性上来说还是差了一点。<br>  2.查询结果目前只显示了报毒引擎的数量，并没对查询结果做进一步的筛查，没有生成相对应的持久化文件，并不方便于后续的样本处理。<br>  3.没有做过大量测试，可能还存在一些未知的设计错误。</li>
+<li>下一步改进<br>  1.自动生成配置文件，代码读取配置文件中的rar组件路径，APIkey等信息，提高灵活性<br>  2.对查询结果进行一次筛选，生成需要的相对应查询结果文件。<h5 id="项目地址："><a href="#项目地址：" class="headerlink" title="项目地址："></a>项目地址：</h5>  <a href="https://github.com/770807993/batch_Unzip_VT_python" target="_blank" rel="noopener">https://github.com/770807993/batch_Unzip_VT_python</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>此生汝梦
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://cxvhacker.github.io/2020/05/22/sunyu/python-vt/" title="快速辨黑白脚本-python">https://cxvhacker.github.io/2020/05/22/sunyu/python-vt/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-CN" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/python/" rel="tag"># python</a>
+              <a href="/tags/%E8%84%9A%E6%9C%AC/" rel="tag"># 脚本</a>
+              <a href="/tags/virustotal/" rel="tag"># virustotal</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/05/22/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/" rel="prev" title="CVE-2017-11882漏洞的简单分析">
+      <i class="fa fa-chevron-left"></i> CVE-2017-11882漏洞的简单分析
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#整体描述"><span class="nav-number">1.</span> <span class="nav-text">整体描述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#文件操作部分"><span class="nav-number">2.</span> <span class="nav-text">文件操作部分</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#解压部分"><span class="nav-number">3.</span> <span class="nav-text">解压部分</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#VT扫描部分"><span class="nav-number">4.</span> <span class="nav-text">VT扫描部分</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#汇总部分"><span class="nav-number">5.</span> <span class="nav-text">汇总部分</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#项目地址："><span class="nav-number">6.0.0.0.1.</span> <span class="nav-text">项目地址：</span></a></li></ol></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">vhacker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">vhacker</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '399537cdb54292e355a4',
+      clientSecret: '1d1c2f5009f3f64de8bdb96fe07481045f835d06',
+      repo        : 'cxvhacker.github.io',
+      owner       : 'cxvhacker',
+      admin       : ['cxvhacker'],
+      id          : '204a349c70f851ca13fe19b53199862e',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
