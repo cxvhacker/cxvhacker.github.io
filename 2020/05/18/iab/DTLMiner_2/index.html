@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"cxvhacker.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="在短短一个月中,DTLMiner再次更新,从bluetea版本更新为blackball版本.来详细看一下此次更新做了哪些改动.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="驱动人生木马再度更新,新增钓鱼邮件传播">
+<meta property="og:url" content="https://cxvhacker.github.io/2020/05/18/iab/DTLMiner_2/index.html">
+<meta property="og:site_name" content="辰信安全基地">
+<meta property="og:description" content="在短短一个月中,DTLMiner再次更新,从bluetea版本更新为blackball版本.来详细看一下此次更新做了哪些改动.">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/schtasks.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/a_jsp_if_mail_bin.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/task_old.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/flag_old.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/task_new.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/flag_new.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_mail_1.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_mail_2.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_mail_3.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_mail_4.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_mail_5.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_mail_6.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_mail_7.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_mail_8.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_mail_9.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_mail_10.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_mail_11.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_mail_12.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_mail_13.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_mail_14.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_mail_15.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_mail_16.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_bin_1.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_bin_2.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/usb.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_bin_3.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/if_bin_4.png">
+<meta property="article:published_time" content="2020-05-18T20:34:22.000Z">
+<meta property="article:modified_time" content="2020-06-08T04:11:19.434Z">
+<meta property="article:author" content="vhacker">
+<meta property="article:tag" content="DTLMiner">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_2/schtasks.png">
+
+<link rel="canonical" href="https://cxvhacker.github.io/2020/05/18/iab/DTLMiner_2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>驱动人生木马再度更新,新增钓鱼邮件传播 | 辰信安全基地</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">辰信安全基地</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">严肃工作  活泼生活</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://cxvhacker.github.io/2020/05/18/iab/DTLMiner_2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="vhacker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="辰信安全基地">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          驱动人生木马再度更新,新增钓鱼邮件传播
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-05-18 20:34:22" itemprop="dateCreated datePublished" datetime="2020-05-18T20:34:22+00:00">2020-05-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-06-08 04:11:19" itemprop="dateModified" datetime="2020-06-08T04:11:19+00:00">2020-06-08</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%97%85%E6%AF%92%E5%88%86%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">病毒分析</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>驱动人生木马”喜迎”再次更新,本次更新内容主要包括:  </p>
+<ul>
+<li>bluetea标志更改为blackball标志  </li>
+<li>新增使用钓鱼邮件传播模块  </li>
+<li>停止对CVE-2019-0708(BlueKeep)漏洞的检测改为对CVE-2020-0796(SmbGhost)的检测  </li>
+<li>不再使用随机域名修改host文件</li>
+</ul>
+<h1 id="样本分析"><a href="#样本分析" class="headerlink" title="样本分析"></a>样本分析</h1><p>下面来具体看一下此次版本更新后的变化,对于与旧版本相同部分只简单概述,更新部分进行详细叙述.</p>
+<h2 id="计划任务"><a href="#计划任务" class="headerlink" title="计划任务"></a>计划任务</h2><p>上一个版本中,计划任务中的操作 是利用powershell获取x.js文件中的代码执行,进而获取x.jsp进行.<br>而新版本直接下载了一个叫a.jsp的文件中的代码执行,也取消了Lemon_Duck的标志.<br><img src="/pic/iab/DTLMiner_2/schtasks.png" alt="ALt text"></p>
+<h2 id="a-jsp"><a href="#a-jsp" class="headerlink" title="a.jsp"></a>a.jsp</h2><p>a.jsp的内容根之前x.jsp的内容大体相同.包括:收集信息(计算机名,guid,操作系统信息,mac地址,用户名,域名,显卡信息,可移动磁盘以及网络磁盘信息);根据系统情况下载矿机(m6.bin,m6g.bin),下载if.bin(传播模块),设置dns,下载report.jsp中的数据执行.<br>与之前不同之处在于,新添加了邮箱的检测,以及if_mail.bin(邮件传播模块数据的下载并执行).<br><img src="/pic/iab/DTLMiner_2/a_jsp_if_mail_bin.png" alt="ALt text"><br>由代码可见,病毒程序通过注册表检测是否安装outlook,如果存在则关闭警告并下载执行if_mail.bin传播模块.  </p>
+<h2 id="report-jsp"><a href="#report-jsp" class="headerlink" title="report.jsp"></a>report.jsp</h2><p>report.jsp中的改动很小,只是修改了计划任务的内容,以及检测标志.<br>旧版本:<br><img src="/pic/iab/DTLMiner_2/task_old.png" alt="ALt text"><br><img src="/pic/iab/DTLMiner_2/flag_old.png" alt="ALt text"><br>新版本:<br><img src="/pic/iab/DTLMiner_2/task_new.png" alt="ALt text"><br><img src="/pic/iab/DTLMiner_2/flag_new.png" alt="ALt text"><br>建立的任务的任务名以及文件夹名 仍然保持随机字符串的状态.  </p>
+<h2 id="if-mail-bin"><a href="#if-mail-bin" class="headerlink" title="if_mail.bin"></a>if_mail.bin</h2><p>if_mail.bin主要是利用了outlook的com接口.利用你的邮箱去发送给其他人带有恶意文件的钓鱼邮件.恶意文件有两个,一个是readme.doc一个是readme.js.<br>先判断是否是管理员权限.<br><img src="/pic/iab/DTLMiner_2/if_mail_1.png" alt="ALt text"><br>如果拥有管理员权限,则执行这段cmd命令<br><img src="/pic/iab/DTLMiner_2/if_mail_2.png" alt="ALt text"><br>经过整理如下.功能就是建立pipe管道,等待接收管道中发来得数据并执行.<br><img src="/pic/iab/DTLMiner_2/if_mail_3.png" alt="ALt text"><br>那现在接收数据部分有了,继续执行下面代码发送数据.<br><img src="/pic/iab/DTLMiner_2/if_mail_4.png" alt="ALt text"><br>如果没有管理员权限,则直接IEX执行.<br>这一部分就是根据情况,在两种方式中去选择执行$mail_code得代码.下面看一下这些代码.其中有大片代码是使用编码加密执行得,下面直接解码展开描述.<br>前半部是在进行钓鱼邮件中附件中文件的数据得构建.<br>doc文件的标题,正文,js文档的内容.<br><img src="/pic/iab/DTLMiner_2/if_mail_5.png" alt="ALt text"><br>漏洞文件的数据头,ole对象等.<br><img src="/pic/iab/DTLMiner_2/if_mail_6.png" alt="ALt text"><br>最终在%temp%目录生成readme.doc和readme.js两个文件.<br>后半部则是利用com接口,使用你得邮箱去发送邮件.<br>首先收集目标邮件地址.分别从联系人,收件箱,发件箱当中遍历.并且获取当前用户的邮箱地址.<br><img src="/pic/iab/DTLMiner_2/if_mail_7.png" alt="ALt text"><br>将文件readme.js打包成readme.zip,并将获取到的当前邮件地址,联系人收件箱发件箱数量信息上传到服务器.<br><img src="/pic/iab/DTLMiner_2/if_mail_8.png" alt="ALt text"><br>邮件的内容是从一个集合中随机的.<br><img src="/pic/iab/DTLMiner_2/if_mail_9.png" alt="ALt text"><br>随机的集合.<br><img src="/pic/iab/DTLMiner_2/if_mail_10.png" alt="ALt text"><br>最后就是将readme.doc,readme.zip添加到附件,发送给所有收集到的邮件地址,并删除所有记录当中与该邮件有关的记录.<br><img src="/pic/iab/DTLMiner_2/if_mail_11.png" alt="ALt text"><br>附件中的readme.doc实质上是一个利用了CVE-2017-8570的rtf文件.当用户打开该文件后,会在%temp%目录生成一个随机名称的.sct文件并加载.该文件内部可执行脚本代码.<br><img src="/pic/iab/DTLMiner_2/if_mail_12.png" alt="ALt text"><br>readme.js文件则是利用大量空白来进行误导迷惑用户,实际代码被存放在最后.<br><img src="/pic/iab/DTLMiner_2/if_mail_13.png" alt="ALt text"><br><img src="/pic/iab/DTLMiner_2/if_mail_14.png" alt="ALt text"><br>两个文档利用的最终目标相同,都是获取7.php的内容执行,并执行bpu函数,这个函数则是在7.php中实现的.<br>7.php的代码如下:<br><img src="/pic/iab/DTLMiner_2/if_mail_15.png" alt="ALt text"><br>如果bpu传入参数是http开头则进行下载文件数据执行的操作.该版本则是用来下载mail.jsp文件当中的数据执行.但是这个函数的功能并不止如此,下半部的代码,还可以使用管理员权限执行任意命令.<br>mail.jsp与report.jsp几乎相同,不在重复描述,但是值得一提的是,mail.jsp中出现了新的域名.<br><img src="/pic/iab/DTLMiner_2/if_mail_16.png" alt="ALt text"></p>
+<h2 id="if-bin"><a href="#if-bin" class="headerlink" title="if.bin"></a>if.bin</h2><p>作为功能最强的传播模块,并没有过多的改动.<br>首先是攻击成功后的payload,从原来的建立计划任务再进一步动作,改为直接使用powershell加载相应的jsp数据执行.这些作为payload的jsp文件中的代码和mail.jsp功能一致.<br><img src="/pic/iab/DTLMiner_2/if_bin_1.png" alt="ALt text"><br>移动磁盘感染部分将readme.js也添加了进去.<br><img src="/pic/iab/DTLMiner_2/if_bin_2.png" alt="ALt text"><br><img src="/pic/iab/DTLMiner_2/usb.png" alt="ALt text"><br>以前对cve-2019-0708的检测被替换为CVE-2020-0796(SmbGhost)的检测.<br><img src="/pic/iab/DTLMiner_2/if_bin_3.png" alt="ALt text"><br>RDP爆破部分在爆破成功后,并没有尝试执行payload命令而是在上报信息后结束.<br><img src="/pic/iab/DTLMiner_2/if_bin_4.png" alt="ALt text"><br>if.bin除去密码字典的更新,模块的改动就是这些了.  </p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>这次更新从流程上看精简了执行步骤,从原来的多步间接下载数据执行,改为了直接下载最终数据执行,减少了网络请求次数,提高了执行效率;更新域名来逃避监测软件得检测封锁;添加了新的传播方式,并且还在不断尝试统计新的可能被利用的传播方式.可见该病毒也在跟随着技术的发展不断进步.</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>iaB
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://cxvhacker.github.io/2020/05/18/iab/DTLMiner_2/" title="驱动人生木马再度更新,新增钓鱼邮件传播">https://cxvhacker.github.io/2020/05/18/iab/DTLMiner_2/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-CN" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/DTLMiner/" rel="tag"># DTLMiner</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/04/05/iab/DTLMiner_1/" rel="prev" title="驱动人生木马(DTLMiner)样本分析">
+      <i class="fa fa-chevron-left"></i> 驱动人生木马(DTLMiner)样本分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/05/22/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/" rel="next" title="CVE-2017-11882漏洞的简单分析">
+      CVE-2017-11882漏洞的简单分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#样本分析"><span class="nav-number">2.</span> <span class="nav-text">样本分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#计划任务"><span class="nav-number">2.1.</span> <span class="nav-text">计划任务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#a-jsp"><span class="nav-number">2.2.</span> <span class="nav-text">a.jsp</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#report-jsp"><span class="nav-number">2.3.</span> <span class="nav-text">report.jsp</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#if-mail-bin"><span class="nav-number">2.4.</span> <span class="nav-text">if_mail.bin</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#if-bin"><span class="nav-number">2.5.</span> <span class="nav-text">if.bin</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">vhacker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">vhacker</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '399537cdb54292e355a4',
+      clientSecret: '1d1c2f5009f3f64de8bdb96fe07481045f835d06',
+      repo        : 'cxvhacker.github.io',
+      owner       : 'cxvhacker',
+      admin       : ['cxvhacker'],
+      id          : '174121660078f8adc3fc416f8991dbfa',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
