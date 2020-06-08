@@ -8,7 +8,6 @@ tags:
 - python 
 - 脚本 
 - virustotal
-top: 100
 date: 2020-05-22 15:13:00
 excerpt: 使用python编写，能够批量解压缩，并将解压后的文件自动上传VT获取查杀结果 
 ---
