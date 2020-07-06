@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"cxvhacker.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="简单探究一下命令提示符背后的运作机制，主要包括启动外部程序时查找程序位置的顺序，以及对程序的后缀名的处理逻辑。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="简单探究命令提示符">
+<meta property="og:url" content="https://cxvhacker.github.io/2020/06/28/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/index.html">
+<meta property="og:site_name" content="辰信安全基地">
+<meta property="og:description" content="简单探究一下命令提示符背后的运作机制，主要包括启动外部程序时查找程序位置的顺序，以及对程序的后缀名的处理逻辑。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E4%B8%8D%E5%AD%98%E5%9C%A8%E7%9A%84%E5%91%BD%E4%BB%A4.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E4%B8%8D%E5%AD%98%E5%9C%A8%E7%9A%84%E5%91%BD%E4%BB%A4promon.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E6%B7%BB%E5%8A%A0%E4%B8%8D%E5%AD%98%E5%9C%A8%E7%9A%84%E8%B7%AF%E5%BE%84%E5%88%B0%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E6%B7%BB%E5%8A%A0%E4%B8%8D%E5%AD%98%E5%9C%A8%E7%9A%84%E8%B7%AF%E5%BE%84%E5%88%B0%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8Fpromon.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E6%96%87%E4%BB%B6%E8%BF%90%E8%A1%8C%E7%A4%BA%E6%84%8F.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/EXE%E8%BF%90%E8%A1%8Cpromon.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/PATHEXT%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E4%BF%AE%E6%94%B9PATHEXT.png">
+<meta property="article:published_time" content="2020-06-28T00:00:00.000Z">
+<meta property="article:modified_time" content="2020-07-06T04:01:31.941Z">
+<meta property="article:author" content="vhacker">
+<meta property="article:tag" content="命令提示符">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cxvhacker.github.io/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E4%B8%8D%E5%AD%98%E5%9C%A8%E7%9A%84%E5%91%BD%E4%BB%A4.png">
+
+<link rel="canonical" href="https://cxvhacker.github.io/2020/06/28/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>简单探究命令提示符 | 辰信安全基地</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">辰信安全基地</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">严肃工作  活泼生活</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://cxvhacker.github.io/2020/06/28/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="vhacker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="辰信安全基地">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          简单探究命令提示符
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-06-28 00:00:00" itemprop="dateCreated datePublished" datetime="2020-06-28T00:00:00+00:00">2020-06-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-07-06 04:01:31" itemprop="dateModified" datetime="2020-07-06T04:01:31+00:00">2020-07-06</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/" itemprop="url" rel="index"><span itemprop="name">命令提示符</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/St/" itemprop="url" rel="index"><span itemprop="name">St</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>​    我们经常通过命令提示符来执行一些操作，通过 <code>ipconfig</code> 来查看 <code>ip</code> 信息，执行 <code>regedit</code> 来查看编辑注册表，或者是以带参数的形式来打开某些程序。但是，为什么输入简单的几个字母就能够启动外部程序，这些外部程序的文件路径在哪里，是按照什么顺序进行查找的，相同名称不同后缀的程序又会优先执行哪个？下面我们通过一些简单的实验来探究这些问题。</p>
+<h1 id="查找顺序"><a href="#查找顺序" class="headerlink" title="查找顺序"></a>查找顺序</h1><p>​    我们先来探究，命令提示符执行外部程序时，是在哪里查找程序文件的，以及查找的顺序是怎样的。</p>
+<p>​    首先，在命令提示符中输入一个不存在的命令（比如，<code>St</code>），使用 <code>Process Monitor</code> 观察整个过程。</p>
+<p><img src="/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E4%B8%8D%E5%AD%98%E5%9C%A8%E7%9A%84%E5%91%BD%E4%BB%A4.png" alt="ALt text"></p>
+<p>​    不出所料，找不到程序。不过，此时我们可以通过 <code>Process Monitor</code> 来观察查找文件时<code>cmd</code>进程的具体操作。</p>
+<p><img src="/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E4%B8%8D%E5%AD%98%E5%9C%A8%E7%9A%84%E5%91%BD%E4%BB%A4promon.png" alt="ALt text"></p>
+<p>​    在 <code>Process Monitor</code> 中我们可以发现，<code>cmd</code>进程先在当前路径进行了查找，然后是系统路径，最后是几个系统中安装的程序的路径。所以，我猜测可能和 <code>PATH</code> 环境变量相关。</p>
+<p>​    查看系统的当前 <code>PATH</code>环境变量。</p>
+<p><img src="/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F.png" alt="ALt text"></p>
+<p>​    对照后，可以发现在 <code>Process Monitor</code> 中 <code>cmd</code>进程的查找顺序和<code>PATH</code> 环境变量的顺序相同。</p>
+<p>​    为了进一步验证，添加一条不存在的路径到 PATH 环境变量中，然后再次执行不存在的命令（比如，<code>St</code>）。</p>
+<p><img src="/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E6%B7%BB%E5%8A%A0%E4%B8%8D%E5%AD%98%E5%9C%A8%E7%9A%84%E8%B7%AF%E5%BE%84%E5%88%B0%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F.png" alt="ALt text"></p>
+<p>​    此时再通过 Process Monitor 观察。</p>
+<p><img src="/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E6%B7%BB%E5%8A%A0%E4%B8%8D%E5%AD%98%E5%9C%A8%E7%9A%84%E8%B7%AF%E5%BE%84%E5%88%B0%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8Fpromon.png" alt="ALt text"></p>
+<p>​    可以发现，相比之前，最后多了一条对新添的的不存在的路径的查找。而且因为该路径并不存在，所以没有后面文件的查找，只有一条对路径的判断操作。</p>
+<p>​    目前为止，基本可以确定命令提示符执行外部程序时的查找为止以及顺序。即现在当前路径下进行查找，如果找不到则根据 PATH 环境变量的顺序依次去查找。</p>
+<h2 id="后缀名的处理顺序"><a href="#后缀名的处理顺序" class="headerlink" title="后缀名的处理顺序"></a>后缀名的处理顺序</h2><p>​    在上面的实验过程中，相信又细心的朋友发现了，查找不存在的命令式，<code>cmd</code> 进程会直接通过 <code>St.*</code> 的形式来排除后缀名的影响。所以我们现在一个确实存在的进程，来观察命令提示符对后缀名的处理逻辑。</p>
+<p>​    首先，自己先生成一个小程序 <code>St.exe</code>，程序很简单，仅执行一个 <code>pause</code> 命令。</p>
+<p><img src="/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E6%96%87%E4%BB%B6%E8%BF%90%E8%A1%8C%E7%A4%BA%E6%84%8F.png" alt="ALt text"></p>
+<p>​    然后，将文件放在命令提示符的当前路径下。在命令提示符中执行 <code>St</code>。观察  <code>Process Monitor</code> 。</p>
+<p><img src="/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/EXE%E8%BF%90%E8%A1%8Cpromon.png" alt="ALt text"></p>
+<p>​    可以发现，<code>cmd</code> 程序在通过 <code>St.*</code> 找文件后，会先查找 <code>St.COM</code> ,没找到才会继续查找 <code>St.EXE</code> 。因为之前查找文件路径的顺序和 <code>PATH</code> 环境变量有关，所以这里会不会和 <code>PATHEXT</code> 环境变量有关系呢？让我们来看一下 <code>PATHEXT</code> 环境变量的内容。</p>
+<p><img src="/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/PATHEXT%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F.png" alt="ALt text"></p>
+<p>​    我们发现在 <code>PATHEXT</code> 环境变量中， <code>.COM</code> 出现在 <code>.EXE</code> 之前，和 <code>cmd</code>进程的查找顺序相同。</p>
+<p>​    为了进一步确定，我们调整一下 <code>PATHEXT</code> 的值为 <code>.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.EXE;.COM</code>。如果和 <code>PATHEXT</code> 环境变量，那么此时会先查找<code>.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;</code>等后缀名，然后执行<code>.EXE</code>,不会查找<code>.COM</code>的后缀名。</p>
+<p>​    再次运行 <code>St.exe</code>命令，观察 <code>Process Monitor</code> ，查看运行结果。</p>
+<p><img src="/pic/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E4%BF%AE%E6%94%B9PATHEXT.png" alt="ALt text"></p>
+<p>​    通过<code>Process Monitor</code>可以发现，这次的 <code>cmd</code> 程序，先查找了前面的后缀名，才运行的 <code>St.exe</code>，并且没有查找 <code>.COM</code>后缀名，和之前的猜测一致。</p>
+<p>​    所以，我们可以确定。在命令提示符中，如果输入的命令不带后缀，那么会根据 <code>PATHEXT</code> 指示的后缀顺序依次拼接成完整名称再查找。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>​    相信通过上面一系列的实验，我们对命令提示符如何执行一个外部命令有了一定的认识。<code>PATH</code> 环境变量决定了外部命令所在位置的查找顺序，<code>PATHEXT</code>环境变量决定了外部命令的后缀名的查找顺序。</p>
+<p>​    当我们在命令提示符中输入一个命令时，会先到当前路径中查找，如果找不到，才会到环境变量 <code>PATH</code> 指示的路径中查找。如果输入的命令不带后缀，那么会根据 <code>PATHEXT</code> 指示的后缀顺序依次拼接成完整名称再查找。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>St
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://cxvhacker.github.io/2020/06/28/zhangtaiming/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/%E7%AE%80%E5%8D%95%E6%8E%A2%E7%A9%B6%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/" title="简单探究命令提示符">https://cxvhacker.github.io/2020/06/28/zhangtaiming/简单探究命令提示符/简单探究命令提示符/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-CN" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E5%91%BD%E4%BB%A4%E6%8F%90%E7%A4%BA%E7%AC%A6/" rel="tag"># 命令提示符</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/06/05/czk/%E5%BF%AB%E6%8D%B7%E5%8A%9E%E5%85%AC/" rel="prev" title="快捷办公">
+      <i class="fa fa-chevron-left"></i> 快捷办公
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#查找顺序"><span class="nav-number">2.</span> <span class="nav-text">查找顺序</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#后缀名的处理顺序"><span class="nav-number">2.1.</span> <span class="nav-text">后缀名的处理顺序</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">vhacker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">7</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">vhacker</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '399537cdb54292e355a4',
+      clientSecret: '1d1c2f5009f3f64de8bdb96fe07481045f835d06',
+      repo        : 'cxvhacker.github.io',
+      owner       : 'cxvhacker',
+      admin       : ['cxvhacker'],
+      id          : '36ef3a0284e953081f2c7d6c4dbf485c',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
