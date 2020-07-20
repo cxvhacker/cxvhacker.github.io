@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"cxvhacker.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="驱动人生木马又又更新了,本次更新中添加了多个模块,并且部分主要传播方式也发生了改变,让我们一起来一探究竟.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="驱动人生木马blackball再更新,新增linux以及python传播模块">
+<meta property="og:url" content="https://cxvhacker.github.io/2020/07/06/iab/DTLMiner_3/index.html">
+<meta property="og:site_name" content="辰信安全基地">
+<meta property="og:description" content="驱动人生木马又又更新了,本次更新中添加了多个模块,并且部分主要传播方式也发生了改变,让我们一起来一探究竟.">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/schtasks.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/killprocess.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/krbin.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/odebin.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/flag.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/blue.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/smbghost.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/smbcode.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/smbcode_1.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/smbcode_2.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/smbcode_3.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/ssh.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/sshcode.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/redis.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/rediscode.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/core.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/aaspkill.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/aaspsshhost.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/aaspdown.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/aaspclear.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/krbin_1.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/krbin_2.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/krbin_3.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/krbin_4.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/krbin_5.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/ode_1.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/ode_2.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/ode_3.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_1.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_2.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_3.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_4.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_5.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_6.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_7.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_8.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_9.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_10.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_11.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_12.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_13.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_14.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_15.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_16.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_17.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_18.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_20.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_19.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_21.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_22.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_23.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_24.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_cur.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_25.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_26.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_27.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_28.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_29.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_30.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_31.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/dat_32.png">
+<meta property="article:published_time" content="2020-07-06T07:30:00.000Z">
+<meta property="article:modified_time" content="2020-07-20T03:33:03.950Z">
+<meta property="article:author" content="vhacker">
+<meta property="article:tag" content="DTLMiner">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cxvhacker.github.io/pic/iab/DTLMiner_3/schtasks.png">
+
+<link rel="canonical" href="https://cxvhacker.github.io/2020/07/06/iab/DTLMiner_3/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>驱动人生木马blackball再更新,新增linux以及python传播模块 | 辰信安全基地</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">辰信安全基地</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">严肃工作  活泼生活</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://cxvhacker.github.io/2020/07/06/iab/DTLMiner_3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="vhacker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="辰信安全基地">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          驱动人生木马blackball再更新,新增linux以及python传播模块
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-07-06 07:30:00" itemprop="dateCreated datePublished" datetime="2020-07-06T07:30:00+00:00">2020-07-06</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-07-20 03:33:03" itemprop="dateModified" datetime="2020-07-20T03:33:03+00:00">2020-07-20</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E7%97%85%E6%AF%92%E5%88%86%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">病毒分析</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>驱动人生木马再次更新,本次更新中在上个版本中进行检测CVE-2020-0796后,首次利用漏洞进行攻击,还新添加了针对linux的SSH爆破以及Redis爆破的传播方式.并且启用了一项曾经在旧版本出现过的以python进行打包的传播模块.<br>下面进行详细分析.对未发生变化得部分粗略概括,对更新得部分进行详细说明.  </p>
+<h1 id="样本分析"><a href="#样本分析" class="headerlink" title="样本分析"></a>样本分析</h1><h2 id="计划任务"><a href="#计划任务" class="headerlink" title="计划任务"></a>计划任务</h2><p>在中毒机器得计划任务上,除了域名得变动没有什么改变,并且使用了多个域名.<br><img src="/pic/iab/DTLMiner_3/schtasks.png" alt="ALt text">  </p>
+<h2 id="a-jsp"><a href="#a-jsp" class="headerlink" title="a.jsp"></a>a.jsp</h2><p>这个模块旧功能包括,收集本地机器信息,下载执行矿机(m6.bin,m6g.bin),下载if.bin(传播模块),设置dns,下载执行report.jsp,if_mail.bin(邮件传播模块).<br>新增旧进程关闭代码,再代码开始部分,执行其他操作前将当前正在运行得恶意进程关闭.<br><img src="/pic/iab/DTLMiner_3/killprocess.png" alt="ALt text"><br>新增模块Kr.bin,这个模块主要是用来关闭一些敏感得服务,进程,以及其他可能抢夺资源得矿机.稍后进行详细描述.<br><img src="/pic/iab/DTLMiner_3/krbin.png" alt="ALt text"><br>最后新增ode.bin模块.此模块用来下载新模块并创建计划任务执行.同样稍后进行详细查看.<br><img src="/pic/iab/DTLMiner_3/odebin.png" alt="ALt text">  </p>
+<h2 id="report-jsp"><a href="#report-jsp" class="headerlink" title="report.jsp"></a>report.jsp</h2><p>先看旧模块得更新.<br>在report.jsp中,上个版本使用得标记是名称为blackball的计划任务作为标记.而再此版本中此处的标记被更换.blackball并没有停止使用只是用作其他模块当中,后面的分析会看到.<br><img src="/pic/iab/DTLMiner_3/flag.png" alt="ALt text"><br>功能上没有变化,使用随机名进行建立计划任务并运行.  </p>
+<h2 id="if-bin"><a href="#if-bin" class="headerlink" title="if.bin"></a>if.bin</h2><p>if.bin作为传播模块目的上仍然是进行内网扩散.但是在传播方式上发生了比较大的变化.<br>首先对于windows平台,停止使用永恒之蓝的传播方式.在解码出来的脚本中,原来的代码依然存在但是已经被注释掉.<br><img src="/pic/iab/DTLMiner_3/blue.png" alt="ALt text"><br>作为替换,使用smbghost漏洞进行攻击.<br><img src="/pic/iab/DTLMiner_3/smbghost.png" alt="ALt text"><br>被攻击后的所执行的文件中代码也发生了改变.由图可见执行的是amgh.jsp中的代码.<br><img src="/pic/iab/DTLMiner_3/smbcode.png" alt="ALt text"><br>这部分代码先针对性得尝试卸载了一些安全软件.<br><img src="/pic/iab/DTLMiner_3/smbcode_1.png" alt="ALt text"><br>然后跟report.jsp相同,建立计划任务,但是当中使用的标志位却是blackball.<br><img src="/pic/iab/DTLMiner_3/smbcode_2.png" alt="ALt text"><br>最后还有一个神奇操作.<br><img src="/pic/iab/DTLMiner_3/smbcode_3.png" alt="ALt text"><br>这段代码的功能是禁用SMBv3的压缩功能,属于是0796的修补措施.病毒作者再攻击成功后将漏洞关闭.这操作用意让人浮想联翩.  </p>
+<p>对1433端口的mysql SA账户的爆破没有改变.不再贴出.  </p>
+<p>新增针对linux环境22端口的SSH爆破.<br><img src="/pic/iab/DTLMiner_3/ssh.png" alt="ALt text"><br>看一下爆破成功的命令,下载core.png并执行.<br><img src="/pic/iab/DTLMiner_3/sshcode.png" alt="ALt text"><br>第二个针对linux的是传播方式是Redis未授权访问漏洞.<br><img src="/pic/iab/DTLMiner_3/redis.png" alt="ALt text"><br>攻击成功后执行的命令仍然是下载core.png的代码执行.<br><img src="/pic/iab/DTLMiner_3/rediscode.png" alt="ALt text"><br>最后来看一下core.png里面是什么.该文件为一个shell脚本.<br><img src="/pic/iab/DTLMiner_3/core.png" alt="ALt text"><br>图中代码可见,主要功能是利用linux的计划任务机制,创建计划任务执行a.asp脚本,和启动矿机.Xll/xr矿池为lplp.ackng.com:444.<br>在a.asp中储存的同样是shell脚本.该脚本通过网络上大量已知的IOC来关闭其他挖矿程序,主要是通过进程名,文件名,网络连接的ip作为依据进行删除,重复代码比较多,不全部贴出了.<br><img src="/pic/iab/DTLMiner_3/aaspkill.png" alt="ALt text"><br>在kill其他抢夺资源的进程后通过本地的.sshown_hosts记录去重新连接本机登录过的ip进行扩散<br><img src="/pic/iab/DTLMiner_3/aaspsshhost.png" alt="ALt text"><br>下载矿机xr.zip并解压到.Xll.<br><img src="/pic/iab/DTLMiner_3/aaspdown.png" alt="ALt text"><br>最后清空了日志.<br><img src="/pic/iab/DTLMiner_3/aaspclear.png" alt="ALt text"><br>而且还利用<br>稍微总结一下if.bin模块当前版本使用得传播方式:  </p>
+<ul>
+<li>利用CVE-2017-8464得lnk文件  </li>
+<li>SMBGHOST漏洞利用  </li>
+<li>MySql爆破  </li>
+<li>SSH爆破(目标为linux)  </li>
+<li>Redis未授权访问漏洞(目标为linux)  <h2 id="kr-bin"><a href="#kr-bin" class="headerlink" title="kr.bin"></a>kr.bin</h2>下面来介绍第一位新伙伴kr.bin.<br>主要逻辑非常简单.循环Killer.<br><img src="/pic/iab/DTLMiner_3/krbin_1.png" alt="ALt text"><br>到底再Kill什么呢?也很清晰.其实它跟前面linux中提到得脚本kill部分非常相似.<br>首先关服务.被关闭得服务:  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&quot;xWinWpdSrv&quot;, &quot;SVSHost&quot;, &quot;Microsoft Telemetry&quot;, &quot;lsass&quot;, &quot;Microsoft&quot;, &quot;system&quot;, &quot;Oracleupdate&quot;, &quot;CLR&quot;, &quot;sysmgt&quot;, &quot;\gm&quot;, &quot;WmdnPnSN&quot;, &quot;Sougoudl&quot;,&quot;National&quot;, &quot;Nationaaal&quot;, &quot;Natimmonal&quot;, &quot;Nationaloll&quot;, &quot;Nationalmll&quot;,&quot;Nationalaie&quot;,&quot;Nationalwpi&quot;,&quot;WinHelp32&quot;,&quot;WinHelp64&quot;, &quot;Samserver&quot;, &quot;RpcEptManger&quot;, &quot;NetMsmqActiv Media NVIDIA&quot;, &quot;Sncryption Media Playeq&quot;,&quot;SxS&quot;,&quot;WinSvc&quot;,&quot;mssecsvc2.1&quot;,&quot;mssecsvc2.0&quot;,&quot;Windows_Update&quot;,&quot;Windows Managers&quot;,&quot;SvcNlauser&quot;,&quot;WinVaultSvc&quot;,&quot;Xtfy&quot;,&quot;Xtfya&quot;,&quot;Xtfyxxx&quot;,&quot;360rTys&quot;,&quot;IPSECS&quot;,&quot;MpeSvc&quot;,&quot;SRDSL&quot;,&quot;WifiService&quot;,&quot;ALGM&quot;,&quot;wmiApSrvs&quot;,&quot;wmiApServs&quot;,&quot;taskmgr1&quot;,&quot;WebServers&quot;,&quot;ExpressVNService&quot;,&quot;WWW.DDOS.CN.COM&quot;,&quot;WinHelpSvcs&quot;,&quot;aspnet_staters&quot;,&quot;clr_optimization&quot;,&quot;AxInstSV&quot;,&quot;Zational&quot;,&quot;DNS Server&quot;,&quot;Serhiez&quot;,&quot;SuperProServer&quot;,&quot;.Net CLR&quot;,&quot;WissssssnHelp32&quot;,&quot;WinHasdadelp32&quot;,&quot;WinHasdelp32&quot;,&quot;ClipBooks&quot;</span><br></pre></td></tr></table></figure>
+<img src="/pic/iab/DTLMiner_3/krbin_2.png" alt="ALt text"><br>再删计划任务.被删除得计划任务:  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&quot;my1&quot;,&quot;Mysa&quot;, &quot;Mysa1&quot;, &quot;Mysa2&quot;, &quot;Mysa3&quot;, &quot;ok&quot;, &quot;Oracle Java&quot;, &quot;Oracle Java Update&quot;, &quot;Microsoft Telemetry&quot;, &quot;Spooler SubSystem Service&quot;,&quot;Oracle Products Reporter&quot;, &quot;Update service for  products&quot;, &quot;gm&quot;, &quot;ngm&quot;,&quot;Sorry&quot;,&quot;Windows_Update&quot;,&quot;Update_windows&quot;,&quot;WindowsUpdate1&quot;,&quot;WindowsUpdate2&quot;,&quot;WindowsUpdate3&quot;,&quot;AdobeFlashPlayer&quot;,&quot;FlashPlayer1&quot;,&quot;FlashPlayer2&quot;,&quot;FlashPlayer3&quot;,&quot;IIS&quot;,&quot;WindowsLogTasks&quot;,&quot;System Log Security Check&quot;,&quot;Update&quot;,&quot;Update1&quot;,&quot;Update2&quot;,&quot;Update3&quot;,&quot;Update4&quot;,&quot;DNS&quot;,&quot;SYSTEM&quot;,&quot;DNS2&quot;,&quot;SYSTEMa&quot;,&quot;skycmd&quot;,&quot;Miscfost&quot;,&quot;Netframework&quot;,&quot;Flash&quot;,&quot;RavTask&quot;,&quot;GooglePingConfigs&quot;,&quot;HomeGroupProvider&quot;,&quot;MiscfostNsi&quot;,&quot;WwANsvc&quot;,&quot;Bluetooths&quot;,&quot;Ddrivers&quot;,&quot;DnsScan&quot;,&quot;WebServers&quot;,&quot;Credentials&quot;,&quot;TablteInputout&quot;,&quot;werclpsyport&quot;,&quot;HispDemorn&quot;,&quot;LimeRAT-Admin&quot;,&quot;DnsCore&quot;,&quot;Update service for Windows Service&quot;,&quot;DnsCore&quot;,&quot;ECDnsCore&quot;</span><br></pre></td></tr></table></figure>
+<img src="/pic/iab/DTLMiner_3/krbin_3.png" alt="ALt text"><br>第三步删除关闭进程.被关闭得进程关键字:  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&quot;SC&quot;,&quot;WerMgr&quot;,&quot;WerFault&quot;,&quot;DW20&quot;,&quot;msinfo&quot;, &quot;XMR*&quot;,&quot;xmrig*&quot;, &quot;minerd&quot;, &quot;MinerGate&quot;, &quot;Carbon&quot;, &quot;yamm1&quot;, &quot;upgeade&quot;, &quot;auto-upgeade&quot;, &quot;svshost&quot;,</span><br><span class="line">	&quot;SystemIIS&quot;, &quot;SystemIISSec&quot;, &#39;WindowsUpdater*&#39;, &quot;WindowsDefender*&quot;, &quot;update&quot;, </span><br><span class="line">	&quot;carss&quot;, &quot;service&quot;, &quot;csrsc&quot;, &quot;cara&quot;, &quot;javaupd&quot;, &quot;gxdrv&quot;, &quot;lsmosee&quot;, &quot;secuams&quot;, &quot;SQLEXPRESS_X64_86&quot;, &quot;Calligrap&quot;, &quot;Sqlceqp&quot;, &quot;Setting&quot;, &quot;Uninsta&quot;, &quot;conhoste&quot;,&quot;Setring&quot;,&quot;Galligrp&quot;,&quot;Imaging&quot;,&quot;taskegr&quot;,&quot;Terms.EXE&quot;,&quot;360&quot;,&quot;8866&quot;,&quot;9966&quot;,&quot;9696&quot;,&quot;9797&quot;,&quot;svchosti&quot;,&quot;SearchIndex&quot;,&quot;Avira&quot;,&quot;cohernece&quot;,&quot;win&quot;,&quot;SQLforwin&quot;,&quot;xig*&quot;,&quot;taskmgr1&quot;,&quot;Workstation&quot;,&quot;ress&quot;,&quot;explores&quot;</span><br></pre></td></tr></table></figure>
+<img src="/pic/iab/DTLMiner_3/krbin_4.png" alt="ALt text"><br>最后根据连接得ip去挂起进程.目标ip为:  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#39;161.35.107.193:80&#39;,&#39;66.42.43.37:80&#39;,&#39;167.99.154.202:80&#39;,&#39;139.162.80.221:80&#39;,&#39;128.199.183.160:443&#39;</span><br></pre></td></tr></table></figure>
+<img src="/pic/iab/DTLMiner_3/krbin_5.png" alt="ALt text">  <h2 id="ode-bin"><a href="#ode-bin" class="headerlink" title="ode.bin"></a>ode.bin</h2>再来介绍第二位新伙伴ode.bin.<br>这部分代码主要是下载一个文件并执行.并且使用一个kk4kk.log做标记.<br><img src="/pic/iab/DTLMiner_3/ode_1.png" alt="ALt text"><br>将20.dat文件下载到temp目录下的一个随机名称.exe文件.<br><img src="/pic/iab/DTLMiner_3/ode_2.png" alt="ALt text"><br>在通过验证后,根据权限不同,使用计划任务通过两种方式去执行.<br><img src="/pic/iab/DTLMiner_3/ode_3.png" alt="ALt text">  <h2 id="20-dat"><a href="#20-dat" class="headerlink" title="20.dat"></a>20.dat</h2>由于20.dat内容比较多,我们将20.dat定为第三位新伙伴.<br>被下载下的文件(20.dat)是一个8M多的文件,该文件是通过pyinstaller打包成exe的py程序.通过使用反编译工具pyinstxtractor+uncompyle6得到一个2M的py脚本.由于其中内部实现的函数特别多我们从执行逻辑得顺序去看.  <h3 id="首先是自身的版本检查"><a href="#首先是自身的版本检查" class="headerlink" title="首先是自身的版本检查."></a>首先是自身的版本检查.</h3>检测方式是通过读取一个叫path共享内存的方式,这块内存中存放得数据是 “当前路径”+”**“+”版本”+”$$”,如果其中没有内容则代表没有正在运行得进程.<br><img src="/pic/iab/DTLMiner_3/dat_1.png" alt="ALt text"><br>如果有,则读取其中”**“与”$$”之间得版本进行比较.如果版本低则进行替换并建立计划任务去执行.非常骚气得是替换得过程中在程序最后追加了随机字符.这应该是在躲避一些安全软件得查杀方式.<br><img src="/pic/iab/DTLMiner_3/dat_2.png" alt="ALt text"><br>追加随机字符.ranname()函数是一个获得随机字符串得函数.主要用来创建随机名称.<br><img src="/pic/iab/DTLMiner_3/dat_3.png" alt="ALt text"><br>版本检查后在保证单例执行得情况下,初始化了一下需要得基本信息,主要都是一些内置得ip地址,用户名,密码字典.<br>单例执行.<br><img src="/pic/iab/DTLMiner_3/dat_4.png" alt="ALt text"><br>字典信息.这当然不是全部得字典,后续代码中会通过各种方式去扩充.<br><img src="/pic/iab/DTLMiner_3/dat_5.png" alt="ALt text">  <h3 id="构造payload数据"><a href="#构造payload数据" class="headerlink" title="构造payload数据"></a>构造payload数据</h3>功力有限,虽然并不知道payload怎么造,但是看这代码.(怎么这么眼熟?)这不是曾经在旧版本中出现过的永恒之蓝吗.<br><img src="/pic/iab/DTLMiner_3/dat_6.png" alt="ALt text">  <h3 id="查找文件并替换"><a href="#查找文件并替换" class="headerlink" title="查找文件并替换."></a>查找文件并替换.</h3>这段只调用了一个函数eb.<br><img src="/pic/iab/DTLMiner_3/dat_7.png" alt="ALt text"><br>eb函数中,主要功能是在widnows下寻找两个文件,大小分别为6271136和6271280字节,如果找到,则利用cmd命令行替换.这个目的并不明确,可能是去除旧版本程序.<br><img src="/pic/iab/DTLMiner_3/dat_8.png" alt="ALt text">  <h3 id="扩充字典"><a href="#扩充字典" class="headerlink" title="扩充字典."></a>扩充字典.</h3>扩充前先将当前进程路径+”.eb”添加到ee2中.这个参数是后面PSEXEC用的.等后面会提及到这个函数.<br><img src="/pic/iab/DTLMiner_3/dat_9.png" alt="ALt text"><br>然后通过重定向cmd的输出来获得域用户名,管理员组的用户名,以及域管理员的用户名.<br><img src="/pic/iab/DTLMiner_3/dat_10.png" alt="ALt text"><br><img src="/pic/iab/DTLMiner_3/dat_11.png" alt="ALt text"><br>通过整理输出信息,将各个信息添加到之前的字典当中.<br><img src="/pic/iab/DTLMiner_3/dat_12.png" alt="ALt text"><br>下面又对刚刚抓取到的域用户名分别用123456和password作为密码进行了进行两次尝试攻击.因为最后的ip为localhost,所以认为这是一种尝试猜密码的行为.在攻击成功后则表示猜测正确并将用户名密码记录.<br><img src="/pic/iab/DTLMiner_3/dat_13.png" alt="ALt text">  <h3 id="PSEXEC"><a href="#PSEXEC" class="headerlink" title="PSEXEC"></a>PSEXEC</h3>因为刚刚提到了PSEXEC这个类,直接在这说明一下.<br>这个函数可以理解为windows的那个psexec工具,但是病毒作者进行了封装修改.<br><img src="/pic/iab/DTLMiner_3/dat_14.png" alt="ALt text"><br>看作者的用法,这个类直接.run加目标ip就好.run当中都是对协议端口,以及认证等相关信息的初始化.最后再doStuff.<br><img src="/pic/iab/DTLMiner_3/dat_15.png" alt="ALt text"><br>doStuff中就很明显了.<br>第一个参数中(copyfile)就是要复制到目标机器的文件.<br>如果参数中的文件名带.eb则复制为temp\svchost.exe或者windows\temp\svchost.exe<br>否则复制为temp\dig.exe或windows\temp\dig.exe<br><img src="/pic/iab/DTLMiner_3/dat_16.png" alt="ALt text"><br>第二个参数(exefile)就是要复制到目标机器并执行的文件.目标机器中的具体位置则由fr参数控制.<br><img src="/pic/iab/DTLMiner_3/dat_17.png" alt="ALt text"><br>第三个参数(command)是要执行的命令行.在复制第二步的文件时,直接跟随在了启动命令当中.<br><img src="/pic/iab/DTLMiner_3/dat_18.png" alt="ALt text"><br>这些启动代码都被写在了tmp.vbs中.在执行过后还会被删除.<br><img src="/pic/iab/DTLMiner_3/dat_20.png" alt="ALt text"><br><img src="/pic/iab/DTLMiner_3/dat_19.png" alt="ALt text"><br>总之这个类就是利用收集或抓取到的密码或hash凭证去将本地文件发送到目标机器中,并执行相应的命令.  <h3 id="mimiakatz"><a href="#mimiakatz" class="headerlink" title="mimiakatz"></a>mimiakatz</h3>我们再回到20_dat这个脚本当中.在初步收集完域用户名,管理员组的用户名,以及域管理员的用户名后又调用了mmka.<br><img src="/pic/iab/DTLMiner_3/dat_21.png" alt="ALt text"><br>实际上mmka函数就是mimiakatz.它通过内置mimiakatz的powershell代码,直接写到m2.ps1去执行,并通过重定向获得执行结果.<br><img src="/pic/iab/DTLMiner_3/dat_22.png" alt="ALt text"><br>通过整理结果去获取抓取到的用户名和ntlm哈希值.一并合入爆破使用的列表当中.<br><img src="/pic/iab/DTLMiner_3/dat_23.png" alt="ALt text">  <h3 id="下载命令线程"><a href="#下载命令线程" class="headerlink" title="下载命令线程"></a>下载命令线程</h3>开启了一个线程并执行.<br><img src="/pic/iab/DTLMiner_3/dat_24.png" alt="ALt text"><br>这个线程中主要功能是下载e.png这个文件,根据后续代码判断,其中储存的应该是命令行,并执行其中的命令.<br><img src="/pic/iab/DTLMiner_3/dat_cur.png" alt="ALt text">  <h3 id="漏洞扫描"><a href="#漏洞扫描" class="headerlink" title="漏洞扫描"></a>漏洞扫描</h3>最后则是收集ip地址,并对非xp系使用收集到的ip进行了扫描.使用的是scansmb方法.<br>收集ip是利用find_ip这个函数,它的原理是使用命令行和指定网站去收集跟本机相关的ip地址.并只获取其中的网络地址.<br>使用ipconfig -all命令.<br><img src="/pic/iab/DTLMiner_3/dat_25.png" alt="ALt text"><br>使用netstat -na命令.<br><img src="/pic/iab/DTLMiner_3/dat_26.png" alt="ALt text"><br>使用<a href="http://ip.42.pl/raw和http://jsonip.com" target="_blank" rel="noopener">http://ip.42.pl/raw和http://jsonip.com</a> ip查询网址.<br><img src="/pic/iab/DTLMiner_3/dat_27.png" alt="ALt text"><br>扫描时还对一些ip段进行了过滤.<br><img src="/pic/iab/DTLMiner_3/dat_28.png" alt="ALt text"><br>然后对随机ip进行扫描使用的是scansmb2这个方法.<br><img src="/pic/iab/DTLMiner_3/dat_29.png" alt="ALt text"><br>而scansmb和scansmb2这两个函数的区别仅仅在于其中对psexec类fr参数的传参不同.  <h3 id="scansmb"><a href="#scansmb" class="headerlink" title="scansmb"></a>scansmb</h3>这个函数分三大块.针对域使用域用户名密码进行PSEXEC,使用永恒之蓝+PSEXEC,使用其余的用户名密码进行PSEXEC.<br><img src="/pic/iab/DTLMiner_3/dat_30.png" alt="ALt text"><br>看一下永恒之蓝的payload.主要就是下载gim.jsp去执行,并修改administrator的密码为k8d3j9SjfS7.gim.jsp跟if.bin模块中smbghost攻击成功后所执行的amgh.jsp相同.<br><img src="/pic/iab/DTLMiner_3/dat_31.png" alt="ALt text"><br>下面漏洞攻击成功后所执行的PSEXEC内容.主要是将复制过去的svchost文件和dig文件去重命名成一个随机名称.然后建立计划任务去执行这些程序.<br><img src="/pic/iab/DTLMiner_3/dat_32.png" alt="ALt text"><br>由此可以得知,利用永恒之蓝漏洞仅仅是给PSEXEC去创造一个可行的凭证去进行操作.  <h1 id="分析总结"><a href="#分析总结" class="headerlink" title="分析总结"></a>分析总结</h1>此次更新的全部内容已经介绍完毕了.该病毒从原本的本地文件传播到无文件传播,从仅使用网络传播到添加USB以及邮件传播,从永恒之蓝到最新的SMBGhost,从windows到linux.  这个病毒采用的技术可以说是与时俱进,并且非常完善.至此,该病毒已经集成了,永恒之蓝漏洞,CVE-2017-8464 lnk文件漏洞,SMBGhost漏洞,Redis未授权访问漏洞,钓鱼邮件 并且附带ipc,mysql,ssh爆破于一身,可谓是空前的强大.至于为什么放弃了原本powershell中的永恒之蓝利用方法而采用了旧版更加臃肿的py版本有点让人疑惑.  <h1 id="防护建议"><a href="#防护建议" class="headerlink" title="防护建议"></a>防护建议</h1></li>
+<li>安装MS17-010永恒之蓝补丁</li>
+<li>安装CVE-2017-8464 LNK漏洞补丁</li>
+<li>安装CVE-2020-0796 smbghost补丁</li>
+<li>使用高强度的密码,不使用重复密码,并定期更换密码</li>
+<li>建议安装如下补丁防止Mimikatz窃取密码:<br><a href="https://support.microsoft.com/zh-cn/help/2871997/microsoft-security-advisory-update-to-improve-credentials-protection-a" target="_blank" rel="noopener">https://support.microsoft.com/zh-cn/help/2871997/microsoft-security-advisory-update-to-improve-credentials-protection-a</a><br>并使用以下工具关闭其他能够窃取凭证的路径<br><a href="http://download.microsoft.com/download/E/2/D/E2D7C992-7549-4EEE-857E-7976931BAF25/MicrosoftEasyFix20141.mini.diagcab" target="_blank" rel="noopener">http://download.microsoft.com/download/E/2/D/E2D7C992-7549-4EEE-857E-7976931BAF25/MicrosoftEasyFix20141.mini.diagcab</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>iaB
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://cxvhacker.github.io/2020/07/06/iab/DTLMiner_3/" title="驱动人生木马blackball再更新,新增linux以及python传播模块">https://cxvhacker.github.io/2020/07/06/iab/DTLMiner_3/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-CN" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/DTLMiner/" rel="tag"># DTLMiner</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/07/02/sunyu/cve-2012-0158/" rel="prev" title="CVE-2012-0158简单分析和利用">
+      <i class="fa fa-chevron-left"></i> CVE-2012-0158简单分析和利用
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#样本分析"><span class="nav-number">2.</span> <span class="nav-text">样本分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#计划任务"><span class="nav-number">2.1.</span> <span class="nav-text">计划任务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#a-jsp"><span class="nav-number">2.2.</span> <span class="nav-text">a.jsp</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#report-jsp"><span class="nav-number">2.3.</span> <span class="nav-text">report.jsp</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#if-bin"><span class="nav-number">2.4.</span> <span class="nav-text">if.bin</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#kr-bin"><span class="nav-number">2.5.</span> <span class="nav-text">kr.bin</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ode-bin"><span class="nav-number">2.6.</span> <span class="nav-text">ode.bin</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#20-dat"><span class="nav-number">2.7.</span> <span class="nav-text">20.dat</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#首先是自身的版本检查"><span class="nav-number">2.7.1.</span> <span class="nav-text">首先是自身的版本检查.</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#构造payload数据"><span class="nav-number">2.7.2.</span> <span class="nav-text">构造payload数据</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#查找文件并替换"><span class="nav-number">2.7.3.</span> <span class="nav-text">查找文件并替换.</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#扩充字典"><span class="nav-number">2.7.4.</span> <span class="nav-text">扩充字典.</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#PSEXEC"><span class="nav-number">2.7.5.</span> <span class="nav-text">PSEXEC</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mimiakatz"><span class="nav-number">2.7.6.</span> <span class="nav-text">mimiakatz</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#下载命令线程"><span class="nav-number">2.7.7.</span> <span class="nav-text">下载命令线程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#漏洞扫描"><span class="nav-number">2.7.8.</span> <span class="nav-text">漏洞扫描</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#scansmb"><span class="nav-number">2.7.9.</span> <span class="nav-text">scansmb</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#分析总结"><span class="nav-number">3.</span> <span class="nav-text">分析总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#防护建议"><span class="nav-number">4.</span> <span class="nav-text">防护建议</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">vhacker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">9</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">vhacker</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '399537cdb54292e355a4',
+      clientSecret: '1d1c2f5009f3f64de8bdb96fe07481045f835d06',
+      repo        : 'cxvhacker.github.io',
+      owner       : 'cxvhacker',
+      admin       : ['cxvhacker'],
+      id          : '96842bab79cab7502a426d9b7cf4dd78',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
