@@ -20,29 +20,28 @@
     var CONFIG = {"hostname":"cxvhacker.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="CVE-2017-11882是微软公布的一个远程执行漏洞，通杀目前市面上的所有office版本及Windows操作系统。">
+  <meta name="description" content="概述IDC是IDA扩展的一种脚本语言，为什么叫这个名字，估计是它的语法类似于C。 IDA可能很多人都知道，也都用过，但是估计很多人都没有使用过IDC；本人也是仰慕许久，一直未碰到合适的场景练练手，最近分析到一个样本，就实践一下；">
 <meta property="og:type" content="article">
-<meta property="og:title" content="CVE-2017-11882漏洞的简单分析">
-<meta property="og:url" content="https://cxvhacker.github.io/2020/05/22/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/index.html">
+<meta property="og:title" content="IDC脚本初上手">
+<meta property="og:url" content="https://cxvhacker.github.io/2020/07/10/czk/IDC%E8%84%9A%E6%9C%AC%E5%88%9D%E4%B8%8A%E6%89%8B/index.html">
 <meta property="og:site_name" content="辰信安全基地">
-<meta property="og:description" content="CVE-2017-11882是微软公布的一个远程执行漏洞，通杀目前市面上的所有office版本及Windows操作系统。">
+<meta property="og:description" content="概述IDC是IDA扩展的一种脚本语言，为什么叫这个名字，估计是它的语法类似于C。 IDA可能很多人都知道，也都用过，但是估计很多人都没有使用过IDC；本人也是仰慕许久，一直未碰到合适的场景练练手，最近分析到一个样本，就实践一下；">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0.png">
-<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BC%8F%E6%B4%9E%E5%87%BD%E6%95%B01.png">
-<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BC%8F%E6%B4%9E%E5%87%BD%E6%95%B02.png">
-<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BC%8F%E6%B4%9E%E5%87%BD%E6%95%B03.png">
-<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BC%8F%E6%B4%9E%E5%87%BD%E6%95%B04.png">
-<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E6%89%BE%E5%88%B0%E8%BF%94%E5%9B%9E%E5%9C%B0%E5%9D%80.png">
-<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BA%A2%E5%87%BA%E6%8C%87%E4%BB%A4.png">
-<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E6%BA%A2%E5%87%BA%E4%BB%A3%E7%A0%81.png">
-<meta property="article:published_time" content="2020-05-22T00:00:00.000Z">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/idcfirsttry/17Module.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/idcfirsttry/GetFunAddrByHashProc.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/idcfirsttry/funhashs.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/idcfirsttry/ODresult.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/idcfirsttry/ODResultExport2Txt.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/idcfirsttry/IDAFileOpenScriptFile.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/idcfirsttry/funhashresult.png">
+<meta property="article:published_time" content="2020-07-10T00:00:00.000Z">
 <meta property="article:modified_time" content="2020-07-20T03:40:35.616Z">
 <meta property="article:author" content="vhacker">
-<meta property="article:tag" content="CVE-2017-11882">
+<meta property="article:tag" content="idc">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://cxvhacker.github.io/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0.png">
+<meta name="twitter:image" content="https://cxvhacker.github.io/pic/czk/idcfirsttry/17Module.png">
 
-<link rel="canonical" href="https://cxvhacker.github.io/2020/05/22/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/">
+<link rel="canonical" href="https://cxvhacker.github.io/2020/07/10/czk/IDC%E8%84%9A%E6%9C%AC%E5%88%9D%E4%B8%8A%E6%89%8B/">
 
 
 <script id="page-configurations">
@@ -55,7 +54,7 @@
   };
 </script>
 
-  <title>CVE-2017-11882漏洞的简单分析 | 辰信安全基地</title>
+  <title>IDC脚本初上手 | 辰信安全基地</title>
   
 
 
@@ -177,7 +176,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://cxvhacker.github.io/2020/05/22/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/">
+    <link itemprop="mainEntityOfPage" href="https://cxvhacker.github.io/2020/07/10/czk/IDC%E8%84%9A%E6%9C%AC%E5%88%9D%E4%B8%8A%E6%89%8B/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -190,7 +189,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          CVE-2017-11882漏洞的简单分析
+          IDC脚本初上手
         </h1>
 
         <div class="post-meta">
@@ -201,7 +200,7 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2020-05-22 00:00:00" itemprop="dateCreated datePublished" datetime="2020-05-22T00:00:00+00:00">2020-05-22</time>
+              <time title="创建时间：2020-07-10 00:00:00" itemprop="dateCreated datePublished" datetime="2020-07-10T00:00:00+00:00">2020-07-10</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
@@ -216,11 +215,11 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">漏洞分析</span></a>
+                  <a href="/categories/IDA/" itemprop="url" rel="index"><span itemprop="name">IDA</span></a>
                 </span>
                   ，
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/St/" itemprop="url" rel="index"><span itemprop="name">St</span></a>
+                  <a href="/categories/IDA/IDC/" itemprop="url" rel="index"><span itemprop="name">IDC</span></a>
                 </span>
             </span>
 
@@ -235,31 +234,34 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="漏洞描述"><a href="#漏洞描述" class="headerlink" title="漏洞描述"></a>漏洞描述</h1><p>​    CVE-2017-11882 是微软公布的一个远程执行漏洞，通杀目前目前市面上所有的office版本及Windows操作系统。该漏洞的成因是 EQNEDT32.EXE 进程在读入包含 MathType 的 ole 数据时，在拷贝公式字体名称时没有对名称长度进行校验，从而造成栈缓冲区溢出，是一个非常经典的栈溢出漏洞。目前依旧存在大量利用该漏洞的病毒。</p>
-<h1 id="漏洞复现"><a href="#漏洞复现" class="headerlink" title="漏洞复现"></a>漏洞复现</h1><ul>
-<li><p>poc MD5：c5117ac5232ed7980d1672b820ac1a8d</p>
-</li>
-<li><p>漏洞环境：office 2013（需确定存在公式编辑器）</p>
-</li>
-</ul>
-<p>打开poc文件，调用 Word 文档的同时，也会弹出计算器。</p>
-<p><img src="/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0.png" alt="ALt text"></p>
-<h1 id="漏洞成因"><a href="#漏洞成因" class="headerlink" title="漏洞成因"></a>漏洞成因</h1><p>该漏洞出现在 windows 的公式编辑器模块中，模块进程名为 EQNEDT32.EXE。弹出计算器的时候创建了新进程，所以可能是由 WinExec 或者 CreateProcess 两个函数创建的。所以先用调试器 OllDbg 附加 EQNEDT32.EXE，然后在两个函数处下 API 断点，载入样本文件。</p>
-<p><img src="/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BC%8F%E6%B4%9E%E5%87%BD%E6%95%B01.png" alt=""></p>
-<p>文件在 WinExec 函数的断点上，查看堆栈可知函数的主要目的是通过 cmd.exe 进程来打开计算器。</p>
-<p><img src="/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BC%8F%E6%B4%9E%E5%87%BD%E6%95%B02.png" alt=""></p>
-<p>在堆栈中向上搜寻，找到入栈地址。</p>
-<p><img src="/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BC%8F%E6%B4%9E%E5%87%BD%E6%95%B03.png" alt=""></p>
-<p>反汇编窗口中跟随，并在上层函数的起始地址处下断点，重新运行程序，将程序断在此处。</p>
-<p><img src="/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BC%8F%E6%B4%9E%E5%87%BD%E6%95%B04.png" alt=""></p>
-<p>断点停下后，查看该处的堆栈空间，可以看到当前堆栈未被破坏，并找到当前函数的返回地址。</p>
-<p><img src="/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E6%89%BE%E5%88%B0%E8%BF%94%E5%9B%9E%E5%9C%B0%E5%9D%80.png" alt=""></p>
-<p>为了找到触发栈溢出的指令，在函数的返回地址处下硬件写入断点后，继续执行程序。</p>
-<p><img src="/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BA%A2%E5%87%BA%E6%8C%87%E4%BB%A4.png" alt=""></p>
-<p>上图中可以发现，已经发生栈溢出，堆栈被破坏，写入了其他信息，返回地址也被改变。</p>
-<p>通过 IDA 静态分析 EQNEDT32.EXE，找到 0x411658 位置，通过 F5 查看伪代码。</p>
-<p><img src="/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E6%BA%A2%E5%87%BA%E4%BB%A3%E7%A0%81.png" alt=""></p>
-<p>可以发现，在求得字符串的长度后，没有做长度校验，且没有使用安全版本的字符串拷贝，导致出现了溢出的情况。</p>
+        <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>IDC是IDA扩展的一种脚本语言，为什么叫这个名字，估计是它的语法类似于C。</p>
+<p>IDA可能很多人都知道，也都用过，但是估计很多人都没有使用过IDC；本人也是仰慕许久，一直未碰到合适的场景练练手，最近分析到一个样本，就实践一下；</p>
+<a id="more"></a>
+
+<h1 id="情景"><a href="#情景" class="headerlink" title="情景"></a>情景</h1><p>最近分析到一段病毒样本，它会动态加载使用到的模块，然后初始化使用到的模块函数；</p>
+<p><img src="/pic/czk/idcfirsttry/17Module.png" alt="17Module"></p>
+<p>loc_40E85D处是个循环, 依次处理起始于004122D8h处的模块数组，44h/4=11h,可以看到处理17个模块；</p>
+<p>0040E863h处call进入0040E765h,进入之前edi指向模块信息起始地址;</p>
+<p><img src="/pic/czk/idcfirsttry/GetFunAddrByHashProc.png" alt="GetFunAddrByHashProc"></p>
+<p>数组中每个成员指向一个模块信息，每个模块信息第一个成员指向模块名，第二个则是函数个数，第三个则指向要初始化的函数hash数组起始位置；</p>
+<p>首先从偏移0处获取模块名地址，调用LoadLibrary加载模块, 根据导出表找到函数名称计算一个hash值，具体计算过程就不展示了，然后与函数hash数组中的hash对比，一样则把函数地址回写到存储hash的地址处；</p>
+<p><img src="/pic/czk/idcfirsttry/funhashs.png" alt="funhashs"></p>
+<p>函数地址是直接FF 15 call 地址使用的，直接看地址一会就眼花，把地址重命名成对应函数名就好看多了，但一下子17个模块，每个模块几十个函数，每个函数还要计算hash，这要重命名到猴年马月去，费时费力；能自动批量重命名就好了，这个时候就可以用IDC脚本实现这一过程了；</p>
+<p>为了省事直接上OD，动态调试，跳过hash的计算过程，让调试器帮忙填充hash对应的函数地址（当然IDC脚本也能实现hash的计算过程，获取函数地址，先不整这么麻烦）；</p>
+<p><img src="/pic/czk/idcfirsttry/ODresult.png" alt="ODresult"></p>
+<p>上面就是调试器填充的结果,把所有数据复制到txt文档；下面是导出的起始片段；</p>
+<p><img src="/pic/czk/idcfirsttry/ODResultExport2Txt.png" alt="ODResultExport2Txt"></p>
+<p>从导出结果上看我们需要把第一列的函数地址命名成第三列的函数名；</p>
+<p>但导出的数据不完全是要处理的； </p>
+<p>有一个规律，系统函数一般占的都是高地址，可以观察第二列的实际函数地址, 看了整个导出文档，发现需要重命名的地址对应的第二列的实际地址开头都是7，这好办了,直接判断这个；</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">#include &lt;idc.idc&gt;</span><br><span class="line"></span><br><span class="line">static main()</span><br><span class="line">&#123;</span><br><span class="line">	auto fp;</span><br><span class="line">	auto filelinestr;</span><br><span class="line">	auto straddr,funstr;</span><br><span class="line">	auto hexaddr;	</span><br><span class="line"></span><br><span class="line">	fp &#x3D; fopen(&quot;F:\\modulefunctions.txt&quot;,&quot;r&quot;);</span><br><span class="line">	if(fp &#x3D;&#x3D; 0)</span><br><span class="line">	&#123;</span><br><span class="line">		Message(&quot;open %s failed&quot;, &quot;configfile&quot;);</span><br><span class="line">		return ;</span><br><span class="line">	&#125;	</span><br><span class="line">	while(1)</span><br><span class="line">	&#123;</span><br><span class="line">		&#x2F;&#x2F;逐行读取</span><br><span class="line">		filelinestr &#x3D; readstr(fp);</span><br><span class="line">		if(!value_is_string(filelinestr))</span><br><span class="line">			break;</span><br><span class="line">	</span><br><span class="line">		if(filelinestr[10] &#x3D;&#x3D; &quot;7&quot;)</span><br><span class="line">		&#123;</span><br><span class="line">			straddr	&#x3D; filelinestr[:8];  &#x2F;&#x2F;截取前8个  地址</span><br><span class="line">			funstr	&#x3D; filelinestr[20:]; &#x2F;&#x2F;截取函数名</span><br><span class="line">			hexaddr	&#x3D; xtol(straddr);	&#x2F;&#x2F;函数地址字符串转hex</span><br><span class="line">			Message(&quot;%x,%s&quot;,hexaddr,funstr);</span><br><span class="line">			MakeName(hexaddr,funstr); &#x2F;&#x2F;重命名</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;	</span><br><span class="line">	fclose(fp);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>以上就是idc脚本, 语法和C类似, 但并不支持c风格的数组, 所以上面直接是使用分片运算符处理IDC字符串的,局部变量直接auto定义；使用到的readstr 读取文件行内容,Message 输出语句；MakeName重命名函数都是IDC提供支持的函数；具体其他的提供支持的函数可以从网上找资料,这里提供一个参考地址:  <a href="https://www.hex-rays.com/products/ida/support/idadoc/162.shtml" target="_blank" rel="noopener">Index of IDC functions</a></p>
+<h1 id="IDC脚本执行"><a href="#IDC脚本执行" class="headerlink" title="IDC脚本执行"></a>IDC脚本执行</h1><p>下面看一下脚本运行效果；</p>
+<p><img src="/pic/czk/idcfirsttry/IDAFileOpenScriptFile.png" alt="IDAFileOpenScriptFile"></p>
+<p>IDA-&gt;File-&gt;Script file选择编写的idc文件,就可以执行脚本了；</p>
+<p><img src="/pic/czk/idcfirsttry/funhashresult.png" alt="funhashresult"></p>
+<p>自动重命名了，大功告成；</p>
 
     </div>
 
@@ -271,11 +273,11 @@
 <div>
 <ul class="post-copyright">
   <li class="post-copyright-author">
-    <strong>本文作者： </strong>St
+    <strong>本文作者： </strong>czk
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://cxvhacker.github.io/2020/05/22/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/" title="CVE-2017-11882漏洞的简单分析">https://cxvhacker.github.io/2020/05/22/zhangtaiming/CVE-2017-11882漏洞的简单分析/CVE-2017-11882漏洞的简单分析/</a>
+    <a href="https://cxvhacker.github.io/2020/07/10/czk/IDC%E8%84%9A%E6%9C%AC%E5%88%9D%E4%B8%8A%E6%89%8B/" title="IDC脚本初上手">https://cxvhacker.github.io/2020/07/10/czk/IDC脚本初上手/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-CN" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
@@ -286,7 +288,7 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/CVE-2017-11882/" rel="tag"># CVE-2017-11882</a>
+              <a href="/tags/idc/" rel="tag"># idc</a>
           </div>
 
         
@@ -295,13 +297,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/05/18/iab/DTLMiner_2/" rel="prev" title="驱动人生木马再度更新,新增钓鱼邮件传播">
-      <i class="fa fa-chevron-left"></i> 驱动人生木马再度更新,新增钓鱼邮件传播
+    <a href="/2020/07/06/iab/DTLMiner_3/" rel="prev" title="驱动人生木马blackball再更新,新增linux以及python传播模块">
+      <i class="fa fa-chevron-left"></i> 驱动人生木马blackball再更新,新增linux以及python传播模块
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2020/05/22/sunyu/python-vt/" rel="next" title="快速辨黑白脚本-python">
-      快速辨黑白脚本-python <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -362,7 +361,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#漏洞描述"><span class="nav-number">1.</span> <span class="nav-text">漏洞描述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#漏洞复现"><span class="nav-number">2.</span> <span class="nav-text">漏洞复现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#漏洞成因"><span class="nav-number">3.</span> <span class="nav-text">漏洞成因</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#情景"><span class="nav-number">2.</span> <span class="nav-text">情景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#IDC脚本执行"><span class="nav-number">3.</span> <span class="nav-text">IDC脚本执行</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -485,7 +484,7 @@ NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
       repo        : 'cxvhacker.github.io',
       owner       : 'cxvhacker',
       admin       : ['cxvhacker'],
-      id          : 'fe8fa85c0b2e1da0abdf2313f03f296b',
+      id          : '98d407182b663e17a3ad1f8772200134',
         language: 'zh-CN',
       distractionFreeMode: true
     });
