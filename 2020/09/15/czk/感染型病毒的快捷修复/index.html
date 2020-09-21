@@ -20,29 +20,27 @@
     var CONFIG = {"hostname":"cxvhacker.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="CVE-2017-11882是微软公布的一个远程执行漏洞，通杀目前市面上的所有office版本及Windows操作系统。">
+  <meta name="description" content="​    感染型病毒的运行时会将自身或自身的一部分加入到其它的程序中(exe或者dll)，从而实现对感染电脑的破坏和自身的传播. ​    由于感染型病毒的特征，我们在查杀感染型病毒时需要对其附加到宿主程序上的部分进行清除; 怎么样快速的正确还原出原始文件，也就是本篇的目的；">
 <meta property="og:type" content="article">
-<meta property="og:title" content="CVE-2017-11882漏洞的简单分析">
-<meta property="og:url" content="https://cxvhacker.github.io/2020/05/22/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/index.html">
+<meta property="og:title" content="感染型病毒的快捷修复">
+<meta property="og:url" content="https://cxvhacker.github.io/2020/09/15/czk/%E6%84%9F%E6%9F%93%E5%9E%8B%E7%97%85%E6%AF%92%E7%9A%84%E5%BF%AB%E6%8D%B7%E4%BF%AE%E5%A4%8D/index.html">
 <meta property="og:site_name" content="辰信安全基地">
-<meta property="og:description" content="CVE-2017-11882是微软公布的一个远程执行漏洞，通杀目前市面上的所有office版本及Windows操作系统。">
+<meta property="og:description" content="​    感染型病毒的运行时会将自身或自身的一部分加入到其它的程序中(exe或者dll)，从而实现对感染电脑的破坏和自身的传播. ​    由于感染型病毒的特征，我们在查杀感染型病毒时需要对其附加到宿主程序上的部分进行清除; 怎么样快速的正确还原出原始文件，也就是本篇的目的；">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0.png">
-<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BC%8F%E6%B4%9E%E5%87%BD%E6%95%B01.png">
-<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BC%8F%E6%B4%9E%E5%87%BD%E6%95%B02.png">
-<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BC%8F%E6%B4%9E%E5%87%BD%E6%95%B03.png">
-<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BC%8F%E6%B4%9E%E5%87%BD%E6%95%B04.png">
-<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E6%89%BE%E5%88%B0%E8%BF%94%E5%9B%9E%E5%9C%B0%E5%9D%80.png">
-<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BA%A2%E5%87%BA%E6%8C%87%E4%BB%A4.png">
-<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E6%BA%A2%E5%87%BA%E4%BB%A3%E7%A0%81.png">
-<meta property="article:published_time" content="2020-05-22T00:00:00.000Z">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/virusrepair/lordpe.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/virusrepair/IDA_Import.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/virusrepair/FindFirstFile.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/virusrepair/BackupOptionHeader.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/virusrepair/ReadOriPEHeader.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/virusrepair/oriPEHeader.png">
+<meta property="article:published_time" content="2020-09-15T00:00:00.000Z">
 <meta property="article:modified_time" content="2020-09-21T07:40:41.464Z">
 <meta property="article:author" content="vhacker">
-<meta property="article:tag" content="CVE-2017-11882">
+<meta property="article:tag" content="感染型病毒">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://cxvhacker.github.io/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0.png">
+<meta name="twitter:image" content="https://cxvhacker.github.io/pic/czk/virusrepair/lordpe.png">
 
-<link rel="canonical" href="https://cxvhacker.github.io/2020/05/22/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/">
+<link rel="canonical" href="https://cxvhacker.github.io/2020/09/15/czk/%E6%84%9F%E6%9F%93%E5%9E%8B%E7%97%85%E6%AF%92%E7%9A%84%E5%BF%AB%E6%8D%B7%E4%BF%AE%E5%A4%8D/">
 
 
 <script id="page-configurations">
@@ -55,7 +53,7 @@
   };
 </script>
 
-  <title>CVE-2017-11882漏洞的简单分析 | 辰信安全基地</title>
+  <title>感染型病毒的快捷修复 | 辰信安全基地</title>
   
 
 
@@ -177,7 +175,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://cxvhacker.github.io/2020/05/22/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/">
+    <link itemprop="mainEntityOfPage" href="https://cxvhacker.github.io/2020/09/15/czk/%E6%84%9F%E6%9F%93%E5%9E%8B%E7%97%85%E6%AF%92%E7%9A%84%E5%BF%AB%E6%8D%B7%E4%BF%AE%E5%A4%8D/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -190,7 +188,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          CVE-2017-11882漏洞的简单分析
+          感染型病毒的快捷修复
         </h1>
 
         <div class="post-meta">
@@ -201,7 +199,7 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2020-05-22 00:00:00" itemprop="dateCreated datePublished" datetime="2020-05-22T00:00:00+00:00">2020-05-22</time>
+              <time title="创建时间：2020-09-15 00:00:00" itemprop="dateCreated datePublished" datetime="2020-09-15T00:00:00+00:00">2020-09-15</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
@@ -216,11 +214,7 @@
               </span>
               <span class="post-meta-item-text">分类于</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/" itemprop="url" rel="index"><span itemprop="name">漏洞分析</span></a>
-                </span>
-                  ，
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%BC%8F%E6%B4%9E%E5%88%86%E6%9E%90/St/" itemprop="url" rel="index"><span itemprop="name">St</span></a>
+                  <a href="/categories/%E6%84%9F%E6%9F%93%E5%9E%8B%E7%97%85%E6%AF%92%E6%B8%85%E9%99%A4/" itemprop="url" rel="index"><span itemprop="name">感染型病毒清除</span></a>
                 </span>
             </span>
 
@@ -235,31 +229,41 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="漏洞描述"><a href="#漏洞描述" class="headerlink" title="漏洞描述"></a>漏洞描述</h1><p>​    CVE-2017-11882 是微软公布的一个远程执行漏洞，通杀目前目前市面上所有的office版本及Windows操作系统。该漏洞的成因是 EQNEDT32.EXE 进程在读入包含 MathType 的 ole 数据时，在拷贝公式字体名称时没有对名称长度进行校验，从而造成栈缓冲区溢出，是一个非常经典的栈溢出漏洞。目前依旧存在大量利用该漏洞的病毒。</p>
-<h1 id="漏洞复现"><a href="#漏洞复现" class="headerlink" title="漏洞复现"></a>漏洞复现</h1><ul>
-<li><p>poc MD5：c5117ac5232ed7980d1672b820ac1a8d</p>
-</li>
-<li><p>漏洞环境：office 2013（需确定存在公式编辑器）</p>
-</li>
-</ul>
-<p>打开poc文件，调用 Word 文档的同时，也会弹出计算器。</p>
-<p><img src="/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0.png" alt="ALt text"></p>
-<h1 id="漏洞成因"><a href="#漏洞成因" class="headerlink" title="漏洞成因"></a>漏洞成因</h1><p>该漏洞出现在 windows 的公式编辑器模块中，模块进程名为 EQNEDT32.EXE。弹出计算器的时候创建了新进程，所以可能是由 WinExec 或者 CreateProcess 两个函数创建的。所以先用调试器 OllDbg 附加 EQNEDT32.EXE，然后在两个函数处下 API 断点，载入样本文件。</p>
-<p><img src="/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BC%8F%E6%B4%9E%E5%87%BD%E6%95%B01.png" alt=""></p>
-<p>文件在 WinExec 函数的断点上，查看堆栈可知函数的主要目的是通过 cmd.exe 进程来打开计算器。</p>
-<p><img src="/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BC%8F%E6%B4%9E%E5%87%BD%E6%95%B02.png" alt=""></p>
-<p>在堆栈中向上搜寻，找到入栈地址。</p>
-<p><img src="/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BC%8F%E6%B4%9E%E5%87%BD%E6%95%B03.png" alt=""></p>
-<p>反汇编窗口中跟随，并在上层函数的起始地址处下断点，重新运行程序，将程序断在此处。</p>
-<p><img src="/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BC%8F%E6%B4%9E%E5%87%BD%E6%95%B04.png" alt=""></p>
-<p>断点停下后，查看该处的堆栈空间，可以看到当前堆栈未被破坏，并找到当前函数的返回地址。</p>
-<p><img src="/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E6%89%BE%E5%88%B0%E8%BF%94%E5%9B%9E%E5%9C%B0%E5%9D%80.png" alt=""></p>
-<p>为了找到触发栈溢出的指令，在函数的返回地址处下硬件写入断点后，继续执行程序。</p>
-<p><img src="/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E5%AE%9A%E4%BD%8D%E6%BA%A2%E5%87%BA%E6%8C%87%E4%BB%A4.png" alt=""></p>
-<p>上图中可以发现，已经发生栈溢出，堆栈被破坏，写入了其他信息，返回地址也被改变。</p>
-<p>通过 IDA 静态分析 EQNEDT32.EXE，找到 0x411658 位置，通过 F5 查看伪代码。</p>
-<p><img src="/pic/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/%E6%BA%A2%E5%87%BA%E4%BB%A3%E7%A0%81.png" alt=""></p>
-<p>可以发现，在求得字符串的长度后，没有做长度校验，且没有使用安全版本的字符串拷贝，导致出现了溢出的情况。</p>
+        <p>​    感染型病毒的运行时会将自身或自身的一部分加入到其它的程序中(exe或者dll)，从而实现对感染电脑的破坏和自身的传播.</p>
+<p>​    由于感染型病毒的特征，我们在查杀感染型病毒时需要对其附加到宿主程序上的部分进行清除; 怎么样快速的正确还原出原始文件，也就是本篇的目的；</p>
+<a id="more"></a>
+
+
+
+<h1 id="样本信息"><a href="#样本信息" class="headerlink" title="样本信息:"></a>样本信息:</h1><p>MD5: 369CCE2C078C33F996073FF4DC09D451<br>SHA1: BE1CEE51CB13F5687128236FA8E3B2FF3E04BB88</p>
+<p>首先用lordPE看一下样本的入口点和区块信息;</p>
+<p>正常PE一般只有一个.text段，入口点在第一个区块中; 这个样本的区块有几个重复了，而且入口点在第四个区块中，这是不正常的，可以确认一点PE入口点肯定被修改了；</p>
+<p><img src="/pic/czk/virusrepair/lordpe.png" alt="image-20200915163632128"></p>
+<p>现在先不用IDA分析代码呢，试想一下感染型病毒的实现过程, 大体如下</p>
+<p>​    枚举目录-&gt;判断PE类型-&gt;打开读取-&gt;保存原始信息-&gt;写入病毒代码-&gt;修改入口点；</p>
+<p>中间可能用到的函数FindFirstFile,FindNextFile,CreateFile,ReadFile,WriteFile;</p>
+<p>大体逻辑如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">FindFirstFile</span><br><span class="line"></span><br><span class="line">do</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">	if(hFile &#x3D; CreteFile())</span><br><span class="line">	&#123;</span><br><span class="line">		ReadFile(hFile,)</span><br><span class="line">		...</span><br><span class="line">		WriteFile(hFile,)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;while(FindNextFile)</span><br></pre></td></tr></table></figure>
+
+
+
+<p>在IDA中验证一下:</p>
+<p>IDA打开样本，在Import视图中查找相关函数,可以看到相关函数都存在；</p>
+<p><img src="/pic/czk/virusrepair/IDA_Import.png" alt="image-20200915165431665"></p>
+<p>​    双击FindFirstFileA进入相关逻辑代码处，然后F5直接看伪代码(这个样本刚好能成功，如果不能就要看汇编了)</p>
+<p><img src="/pic/czk/virusrepair/FindFirstFile.png" alt="image-20200915165731370"></p>
+<p>可以看到和预测逻辑大体不差，sub_4151d0应该是实现感染的逻辑了，传入的参数是遍历到的文件对应的文件句柄；</p>
+<p>感染时为了后续还能正常执行原始PE文件，一般都会备份原始PE信息, 入口点一类的…</p>
+<p>进入sub_4151d0后重点关注读取的文件数据；</p>
+<p><img src="/pic/czk/virusrepair/BackupOptionHeader.png" alt="image-20200915170943182"></p>
+<p>一个if语句控制了整个函数逻辑, 并且传入了文件句柄,进入看一下;</p>
+<p><img src="/pic/czk/virusrepair/ReadOriPEHeader.png" alt="image-20200915171257139"></p>
+<p>一层层的if判断逻辑，有PE有效性校验; 中间方框框中的，直接把0xf8大小的PE文件头读到全局buffer里面去了。。。</p>
+<p>这还找什么PE入口点，一个PE所有的信息不都存在PEHeader中么，全给我了… 直接从这里恢复就行了</p>
+<p><img src="/pic/czk/virusrepair/oriPEHeader.png" alt="image-20200915171726774"></p>
+<p>至此恢复原始文件的信息基本找齐，直接把数据写回PE头部对应位置就可以了，针对这个pe还要清除病毒代码，即第四个区块以后的。</p>
+<p>针对这个样本，病毒做了什么了，具体感染细节就不一一分析了；</p>
+<p>总之快速分析的关键就是根据相关函数定位到感染逻辑，仔细跟踪ReadFile后的数据处理；</p>
 
     </div>
 
@@ -271,11 +275,11 @@
 <div>
 <ul class="post-copyright">
   <li class="post-copyright-author">
-    <strong>本文作者： </strong>St
+    <strong>本文作者： </strong>czk
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="https://cxvhacker.github.io/2020/05/22/zhangtaiming/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/CVE-2017-11882%E6%BC%8F%E6%B4%9E%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%86%E6%9E%90/" title="CVE-2017-11882漏洞的简单分析">https://cxvhacker.github.io/2020/05/22/zhangtaiming/CVE-2017-11882漏洞的简单分析/CVE-2017-11882漏洞的简单分析/</a>
+    <a href="https://cxvhacker.github.io/2020/09/15/czk/%E6%84%9F%E6%9F%93%E5%9E%8B%E7%97%85%E6%AF%92%E7%9A%84%E5%BF%AB%E6%8D%B7%E4%BF%AE%E5%A4%8D/" title="感染型病毒的快捷修复">https://cxvhacker.github.io/2020/09/15/czk/感染型病毒的快捷修复/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-CN" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
@@ -286,7 +290,7 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/CVE-2017-11882/" rel="tag"># CVE-2017-11882</a>
+              <a href="/tags/%E6%84%9F%E6%9F%93%E5%9E%8B%E7%97%85%E6%AF%92/" rel="tag"># 感染型病毒</a>
           </div>
 
         
@@ -295,13 +299,10 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/05/18/iab/DTLMiner_2/" rel="prev" title="驱动人生木马再度更新,新增钓鱼邮件传播">
-      <i class="fa fa-chevron-left"></i> 驱动人生木马再度更新,新增钓鱼邮件传播
+    <a href="/2020/09/09/wyy/%E5%87%BD%E6%95%B0%E6%A8%A1%E6%9D%BF/" rel="prev" title="函数模板">
+      <i class="fa fa-chevron-left"></i> 函数模板
     </a></div>
-      <div class="post-nav-item">
-    <a href="/2020/05/22/sunyu/python-vt/" rel="next" title="快速辨黑白脚本-python">
-      快速辨黑白脚本-python <i class="fa fa-chevron-right"></i>
-    </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -362,7 +363,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#漏洞描述"><span class="nav-number">1.</span> <span class="nav-text">漏洞描述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#漏洞复现"><span class="nav-number">2.</span> <span class="nav-text">漏洞复现</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#漏洞成因"><span class="nav-number">3.</span> <span class="nav-text">漏洞成因</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#样本信息"><span class="nav-number">1.</span> <span class="nav-text">样本信息:</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -485,7 +486,7 @@ NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
       repo        : 'cxvhacker.github.io',
       owner       : 'cxvhacker',
       admin       : ['cxvhacker'],
-      id          : 'fe8fa85c0b2e1da0abdf2313f03f296b',
+      id          : '657379538fa6e76839bef7709aa83c7e',
         language: 'zh-CN',
       distractionFreeMode: true
     });
