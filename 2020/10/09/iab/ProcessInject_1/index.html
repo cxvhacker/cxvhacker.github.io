@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"cxvhacker.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="windows注入是一个被许多人反复研究的话题,并且目前已经拥有许多技术去将数据从一个进程注入到另一个进程当中.恶意代码常常使用注入技术去获得特权,执行敏感操作以此来获得隐匿性并且绕过安全产品的检测.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Windows进程注入技术总结(一)">
+<meta property="og:url" content="https://cxvhacker.github.io/2020/10/09/iab/ProcessInject_1/index.html">
+<meta property="og:site_name" content="辰信安全基地">
+<meta property="og:description" content="windows注入是一个被许多人反复研究的话题,并且目前已经拥有许多技术去将数据从一个进程注入到另一个进程当中.恶意代码常常使用注入技术去获得特权,执行敏感操作以此来获得隐匿性并且绕过安全产品的检测.">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-10-09T07:30:00.000Z">
+<meta property="article:modified_time" content="2020-10-28T06:19:37.900Z">
+<meta property="article:author" content="vhacker">
+<meta property="article:tag" content="Inject">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://cxvhacker.github.io/2020/10/09/iab/ProcessInject_1/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Windows进程注入技术总结(一) | 辰信安全基地</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">辰信安全基地</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">严肃工作  活泼生活</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://cxvhacker.github.io/2020/10/09/iab/ProcessInject_1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="vhacker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="辰信安全基地">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Windows进程注入技术总结(一)
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-10-09 07:30:00" itemprop="dateCreated datePublished" datetime="2020-10-09T07:30:00+00:00">2020-10-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-10-28 06:19:37" itemprop="dateModified" datetime="2020-10-28T06:19:37+00:00">2020-10-28</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Windows/" itemprop="url" rel="index"><span itemprop="name">Windows</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>Windows平台下的进程注入技术一直以来都是一个被人精心研究的话题,并且目前已经拥有许多技术去将数据从一个进程注入到其他进程当中.恶意代码最是常用这种技术去进行敏感操作,以达到隐藏自身,绕过安全产品检测的目的.为了能够全面了解这项技术,我学习了Safebreach Labs曾经在BlackHat大会上所讨论的一个主题,该主题包含了尽可能所有的已知的并且在当前环境(Win10)下可用的注入技术,并进行了总结.由于内容较多,先分块进行分享.<br>这篇主要是阐述在学习过程中所需要的知识铺垫,一些观点的解释,以及一些传统的经典注入方式.  </p>
+<h1 id="Windows进程注入"><a href="#Windows进程注入" class="headerlink" title="Windows进程注入"></a>Windows进程注入</h1><h2 id="熟悉的注入种类"><a href="#熟悉的注入种类" class="headerlink" title="熟悉的注入种类"></a>熟悉的注入种类</h2><p>Safebreach Labs在个话题中提出了一个”true process inject techniques”的说法,所以在此将注入技术分为三类:  </p>
+<ol>
+<li>Process spawning<br>这类方法是创建一个合法的进程,并在进程开始运行之前挂起并修改它,这类技术可行,但缺少隐蔽性.</li>
+<li>进程初始化时注入<br>这类方法源于某些进程在开始运行时需要加载某些dll,通常这类方法都会需要权限,并且被 Extension Point Disable Policy 所缓解.</li>
+<li>注入到正在运行的进程<br>这类技术正是这个主题要进行讨论的,也是被称为”true process inject techniques”的技术.注入到正在运行的进程中通常包含两项子技术:<br>a.在目标进程中准备内存空间<br>b.执行在目标进程中的逻辑代码.    </li>
+</ol>
+<h2 id="当下的Windows的环境"><a href="#当下的Windows的环境" class="headerlink" title="当下的Windows的环境"></a>当下的Windows的环境</h2><p>如今使用windows 10 64-bit操作系统的人正在大量增长,这一环境的改变对注入技术也产生了极大的影响,所以我们先来了解一下当下环境.  </p>
+<h3 id="X64"><a href="#X64" class="headerlink" title="X64"></a>X64</h3><p>在x86中,除fastcall的所有调用方式都将参数放到栈上.而x64中的调用约定将前4个参数放到寄存器中(RCX,RDX,R8,R9),其余的参数放到栈上.这使得在设计一个64位的payload时要变得更加困难,因为这些payload在调用一个函数时需要控制更多的寄存器.理论上可以使用popad这类寄存器将数据弹出到寄存器中,然而这个指令在x64模式中不可用.  </p>
+<h3 id="Win10新增的安全机制"><a href="#Win10新增的安全机制" class="headerlink" title="Win10新增的安全机制"></a>Win10新增的安全机制</h3><ul>
+<li>CFG(Control Flow Guard)<br>这是微软对windows(8.1,10)中CFI (Control Flow Integrity)的实现.编译器优先于每个间接调用使用_guard_check_icall来检查调用目标的合法性.合法性也是由编译器提供,是一个为每个模块以16字节对其进行记录的列表,以”bitmap”的方式进行访问.为了让该机制生效,调用模块和被调用必须都支持CFG.</li>
+<li>ACG(Arbitrary Code Guard)<br>任意代码保护(ACG)是新加入到Windows操作系统之中的可选缓解措施，该机制主要尝试检查如下行为并进行阻止：<br>1、现有代码被修改(代码页不能变为可写)<br>2、在数据段上写入代码并执行(数据不能变为代码)<br>为了实现上述目标，任意代码保护（ACG）机制会执行以下规则：<br>内存不能同时具有写入（W）和执行（X）属性。<br>这项功能防止进程在内存中写入数据并执行,即内存不能同时据有写入和执行属性,也就是调用 VirtualAlloc VirtualProtect等函数无法再使用 PAGE_EXECUTE_READWRITE这类参数.注意,这项策略可以选择开启或关闭,并且VirtualProtectEx的策略使用的是调用者的策略. </li>
+<li>CIG(Code Integrity Guard)<br>代码完整性保护,只允许被Microsoft/微软商店/WHQL签名的模块才能被加载到内存.</li>
+<li>Extension Point Disable Policy<br>如果启用了”扩展点禁用”策略，则将阻止使用某些内置的第三方扩展点。该策略阻止了以下扩展点：<br>AppInit DLL<br>Winsock分层服务提供程序(LSP)<br>全局Windows Hook<br>旧版输入法编辑器(IME)<br>这里只挑了部分新增的关键的机制说明,对于Win10其他的保护机制可以参考:<br><a href="https://docs.microsoft.com/zh-cn/windows/security/threat-protection/overview-of-threat-mitigations-in-windows-10" target="_blank" rel="noopener">https://docs.microsoft.com/zh-cn/windows/security/threat-protection/overview-of-threat-mitigations-in-windows-10</a>  </li>
+</ul>
+<h3 id="对CFG的绕过"><a href="#对CFG的绕过" class="headerlink" title="对CFG的绕过"></a>对CFG的绕过</h3><p>微软提供标准API(SetProcessValidCallTargets)将目标进程中任意地址添加到”白名单”(CFG).它的内部实现是调用tdll!NtSetInformationVirtualMemory函数附带 VmInformationClass= VmCfgCallTargetInformation参数</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">HANDLE p = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION, FALSE, process_id);</span><br><span class="line">MEMORY_BASIC_INFORMATION meminfo;</span><br><span class="line">VirtualQueryEx(p, target, &amp;meminfo, <span class="keyword">sizeof</span>(meminfo));</span><br><span class="line">CFG_CALL_TARGET_INFO cfg;</span><br><span class="line">cfg.Offset = ((DWORD64)target) - (DWORD64)meminfo.AllocationBase;</span><br><span class="line">cfg.Flags = CFG_CALL_TARGET_VALID;</span><br><span class="line">SetProcessValidCallTargets(p, meminfo.AllocationBase, meminfo.RegionSize, <span class="number">1</span>, &amp;cfg);</span><br></pre></td></tr></table></figure>
+<p>并且有一个简单的方式去停用Win10 1803当中除CFG以外的其他所有保护机制.微软提供了一个标准API(SetProcessMitigationPolicy)再自己的进程中打开/关闭这些功能.这个函数需要再目标进程中调用,并提供三个参数:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">HANDLE th&#x3D;OpenThread(THREAD_SET_CONTEXT, FALSE, thread_id);</span><br><span class="line">ntdll!NtQueueApcThread(th, SetProcessMitigationPolicy, (void*)ProcessDynamicCodePolicy, ((char*)GetModuleHandleA(&quot;ntdll&quot;)) + 0x20, sizeof(PROCESS_MITIGATION_DYNAMIC_CODE_POLICY));</span><br></pre></td></tr></table></figure>
+<p>但是这个方法在Windows 1809开始被停用.一旦保护设置（通过SetProcessMitigationPolicy），也无法取消设置 - SetProcessMitigationPolicy返回状态ERROR_ACCESS_DENIED.  </p>
+<h2 id="windows注入的步骤"><a href="#windows注入的步骤" class="headerlink" title="windows注入的步骤"></a>windows注入的步骤</h2><p>通常情况下,注入分3步:</p>
+<ul>
+<li>内存分配</li>
+<li>内存写操作</li>
+<li>执行<br>有时内存分配和内存写入在技术上处于同一个步骤,使用相同的API,有时内存分配时隐式的,有时不能将内存写入与执行分开.<br>通常情况下,内存分配和写入要在执行前执行多次.所以在介绍注入技术是将写技术和执行技术分开来介绍,也就是说任意一种写技术都可以与任意一种执行技术相匹配.  </li>
+</ul>
+<h3 id="关于内存分配的注意事项"><a href="#关于内存分配的注意事项" class="headerlink" title="关于内存分配的注意事项"></a>关于内存分配的注意事项</h3><p>一般情况下,内存写入代码需要目标内存已经被申请.这可以通过两种方式进行:  </p>
+<ol>
+<li>注入器进程调用VirtualAllocEx(或者NtAllocateVirtualMemory)在目标进程中申请新的内存空间.这种情况下注入器可以申请可读/可写/可执行.注意,申请的可执行内存默认已经被CFG标记为有效目标.  </li>
+<li>注入器进程可以指定目标进程中的一块现有内存区覆盖,这里有几个选择:  <ol>
+<li>栈:不管是栈中使用的内存还是栈顶以外的内存都是可读可写的.写入栈需要几个注意事项:(i)TOS(栈顶)当写入栈顶以为的内存时,可能被后续的内部调用或系统调用所覆盖(ii)写入栈顶以前的内存时,这将使现有的堆栈被覆盖.  </li>
+<li>Image:一些dll的数据段包含”备用”空间,这些空洞是可读可写的,并且被初始化为0.  </li>
+<li>堆:任何在堆上分配的数据对象,并且地址是对注入器进程已知的理论上都可以被利用.虽然有些内存空间可能由于对象被操纵或释放而被修改或回收.   </li>
+</ol>
+</li>
+</ol>
+<h2 id="windows注入技术"><a href="#windows注入技术" class="headerlink" title="windows注入技术"></a>windows注入技术</h2><p>下面的说明中尽量将 a.在目标进程中准备内存空间,b.执行在目标进程中的逻辑代码这两项技术分开展示.</p>
+<ol>
+<li><p><strong>经典的WriteProcessMemory写方法</strong><br>a. 确认目标内存地址已经被申请.(例如使用VirtualAllocEx)<br>b. 使用WriteProcessMemory写入数据.  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">HANDLE h &#x3D; OpenProcess(PROCESS_VM_WRITE | PROCESS_VM_OPERATION, FALSE, process_id);</span><br><span class="line">LPVOID target_payload &#x3D; VirtualAllocEx(h,NULL,sizeof(payload),MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);</span><br><span class="line">WriteProcessMemory(h,target_payload,payload,sizeof(payload),NULL);</span><br></pre></td></tr></table></figure></li>
+<li><p><strong>经典的Dll注入执行方式(执行方法)</strong><br>a. 将恶意DLL写入磁盘,DllMain需要包含启动payload的引导代码<br>b. 将dll路径写入目标进程<br>c. 使用加载dll的方式执行.CreateRemoteThread(…,LoadLibraryA,DLL_path_string) (internal functions NtCreateThreadEx and RtlCreateUserThread can also be used)<br>变式1:使用QueueUserAPC代替CreateRemoteThread(线程必须处于警醒状态)<br>变式2:在系统dll中寻找一个以0节为的有效路径代替想目标进程内从中写入dll路径,将dll文件以找到的名字写入磁盘,然后LoadLibraryA的参数指向找到的字符串.(例如,ntdll.dll中包含字符串\ntdll\ldrsnap.c,所以把dll放在c:\ntdll\ldrsnap.c)  </p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">HANDLE h = OpenProcess(PROCESS_CREATE_THREAD,FALSE,process_id);</span><br><span class="line">CreateRemoteThread(h,<span class="literal">NULL</span>,<span class="number">0</span>,(LPTHREAD_START_ROUTINE)LoadLibraryA,target_DLL_path,<span class="number">0</span>,<span class="literal">NULL</span>);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>CreateRemoteThread执行方法</strong><br>与上一种的不同只是thread直接执行payload<br>a. 使用任何一种写方法将代码数据写入到内存当中.<br>b. 使用CreateRemoteThread执行代码(需要CFG有效目标)  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">HANDLE h &#x3D; OpenProcess(PROCESS_CREATE_THREAD, FALSE, process_id);</span><br><span class="line">CreateRemoteThread(h, NULL, 0, (LPTHREAD_START_ROUTINE)target_execution,RCX,0,NULL);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>APC执行方式</strong><br>线程必须处于惊醒状态.i.e. in one of 5 functions: SleepEx, WaitForSingleObjectEx, WaitForMultipleObjectsEx, SignalObjectAndWait, MsgWaitForMultipleObjectsEx (probably RealMsgWaitForMultipleObjectsEx).<br>a. 将数据使用任何一种写方式写入到目标进程当中.<br>b. 使用QueueUserAPC/NtQueueApcThread执行目标代码.   </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">HANDLE h &#x3D; OpenThread(THREAD_SET_CONTEXT,FALSE,thread_id);</span><br><span class="line">QueueUserAPC((LPTHREAD_START_ROUTINE)target_execution,h,RCX);</span><br><span class="line">&#x2F;&#x2F;or</span><br><span class="line">ntdll!NtQueueApcThread(h,(LPTHREAD_START_ROUTINE)target_execution,RCX,RDX,R8);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>线程劫持执行方法”Suspend-Inject-Resume”</strong><br>a. 使用任何一种写内存的方式将数据写到目标位置,例如,VirtualAllocEx(…,PAGE_EXECUTE_READWRITE)+WriteProcessMemory (not shown).<br>b. 使用SetThreadContext去执行代码 (目标线程需要被挂起再恢复) – 将RIP设置为被写入的代码或者一个ROP链位置.<br>变式:使用NtQueueApcThread(thread,SetThreadContext,-2,context,NULL)去代替<br>但是这种方式需要在payload中去恢复劫持前的环境.  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">HANDLE t &#x3D; OpenThread(THREAD_SET_CONTEXT,FALSE,thread_id);</span><br><span class="line">SuspendThread(t);</span><br><span class="line">CONTEXT ctx;</span><br><span class="line">ctx.ContextFlags &#x3D; CONTEXT_CONTROL;</span><br><span class="line">ctx.Rip &#x3D; (DWORD64)target_execution;</span><br><span class="line">SetThreadContext(t,&amp;ctx);</span><br><span class="line">ResumeThread(t);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>使用windows Hook函数去执行</strong><br>a. 将恶意dll文件写入磁盘.<br>b. 使用SetWindowsHookEx(…,handle to DLL, thread_id) 这将会使dll加载到进程当中(线程中必须有一个消息循环).有一个不太优雅的方式,将thread_id设为0 会注入所有的进程消息循环当中.  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">HMOUDLE h &#x3D; LoadLibraryA(dll_path);</span><br><span class="line">HOOKPROC f &#x3D; (HOOKPROC)GetProcAddress(h,&quot;GetMsgProc&quot;);</span><br><span class="line">SetWindowsHookExA(WH_GETMESSAGE, f, h, thread_id);</span><br><span class="line">PostThreadMessage(thread_id,WM_NULL,NULL,NULL);</span><br></pre></td></tr></table></figure>
+
+
+</li>
+</ol>
+<p>以上写的都是写比较通用的写和执行方式,但是由于太过经典被广泛使用导致被检测的可能性极高,之后还有更多更先进更新颖的方式在学习完后继续分享.  </p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>iaB
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://cxvhacker.github.io/2020/10/09/iab/ProcessInject_1/" title="Windows进程注入技术总结(一)">https://cxvhacker.github.io/2020/10/09/iab/ProcessInject_1/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-CN" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Inject/" rel="tag"># Inject</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/09/23/zhanghao/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9C/" rel="prev" title="生成式对抗网络简介">
+      <i class="fa fa-chevron-left"></i> 生成式对抗网络简介
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/10/23/zhangtaiming/%E7%97%85%E6%AF%92%E7%9A%84%E5%B8%B8%E8%A7%81%E5%90%AF%E5%8A%A8%E6%89%8B%E6%AE%B5/%E7%97%85%E6%AF%92%E7%9A%84%E5%B8%B8%E8%A7%81%E5%90%AF%E5%8A%A8%E6%89%8B%E6%AE%B5/" rel="next" title="病毒的常见启动手段">
+      病毒的常见启动手段 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Windows进程注入"><span class="nav-number">2.</span> <span class="nav-text">Windows进程注入</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#熟悉的注入种类"><span class="nav-number">2.1.</span> <span class="nav-text">熟悉的注入种类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#当下的Windows的环境"><span class="nav-number">2.2.</span> <span class="nav-text">当下的Windows的环境</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#X64"><span class="nav-number">2.2.1.</span> <span class="nav-text">X64</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Win10新增的安全机制"><span class="nav-number">2.2.2.</span> <span class="nav-text">Win10新增的安全机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#对CFG的绕过"><span class="nav-number">2.2.3.</span> <span class="nav-text">对CFG的绕过</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#windows注入的步骤"><span class="nav-number">2.3.</span> <span class="nav-text">windows注入的步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#关于内存分配的注意事项"><span class="nav-number">2.3.1.</span> <span class="nav-text">关于内存分配的注意事项</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#windows注入技术"><span class="nav-number">2.4.</span> <span class="nav-text">windows注入技术</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">vhacker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">17</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">vhacker</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '399537cdb54292e355a4',
+      clientSecret: '1d1c2f5009f3f64de8bdb96fe07481045f835d06',
+      repo        : 'cxvhacker.github.io',
+      owner       : 'cxvhacker',
+      admin       : ['cxvhacker'],
+      id          : '6d5889d2a5fbf1d99009667438ac39c4',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
