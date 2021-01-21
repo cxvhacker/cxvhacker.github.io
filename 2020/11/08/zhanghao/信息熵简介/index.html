@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"cxvhacker.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="介绍信息熵">
+<meta property="og:type" content="article">
+<meta property="og:title" content="信息熵简介">
+<meta property="og:url" content="https://cxvhacker.github.io/2020/11/08/zhanghao/%E4%BF%A1%E6%81%AF%E7%86%B5%E7%AE%80%E4%BB%8B/index.html">
+<meta property="og:site_name" content="辰信安全基地">
+<meta property="og:description" content="介绍信息熵">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-11-08T00:00:00.000Z">
+<meta property="article:modified_time" content="2021-01-21T09:45:28.028Z">
+<meta property="article:author" content="vhacker">
+<meta property="article:tag" content="信息熵简介">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://cxvhacker.github.io/2020/11/08/zhanghao/%E4%BF%A1%E6%81%AF%E7%86%B5%E7%AE%80%E4%BB%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>信息熵简介 | 辰信安全基地</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">辰信安全基地</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">严肃工作  活泼生活</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://cxvhacker.github.io/2020/11/08/zhanghao/%E4%BF%A1%E6%81%AF%E7%86%B5%E7%AE%80%E4%BB%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="vhacker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="辰信安全基地">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          信息熵简介
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-11-08 00:00:00" itemprop="dateCreated datePublished" datetime="2020-11-08T00:00:00+00:00">2020-11-08</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-01-21 09:45:28" itemprop="dateModified" datetime="2021-01-21T09:45:28+00:00">2021-01-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">机器学习</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/%E4%BF%A1%E6%81%AF%E8%AE%BA/" itemprop="url" rel="index"><span itemprop="name">信息论</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+    "HTML-CSS": { 
+        preferredFont: "TeX", 
+        availableFonts: ["STIX","TeX"], 
+        linebreaks: { automatic:true }, 
+        EqnChunk: (MathJax.Hub.Browser.isMobile ? 10 : 50) 
+    },
+    tex2jax: { 
+        inlineMath: [ ["$", "$"], ["\\(","\\)"] ], 
+        processEscapes: true, 
+        ignoreClass: "tex2jax_ignore|dno",
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+    },
+    TeX: {  
+        equationNumbers: { autoNumber: "AMS" },
+        noUndefined: { attributes: { mathcolor: "red", mathbackground: "#FFEEEE", mathsize: "90%" } }, 
+        Macros: { href: "{}" } 
+    },
+    messageStyle: "none"
+    }); 
+</script>
+<!-- 给MathJax元素添加has-jax class -->
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for(i=0; i < all.length; i += 1) {
+            all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+    });
+</script>
+<!-- 通过连接CDN加载MathJax的js代码 -->
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>大家接触熵这个概念最早应该是在高中时期学习热力学三大定律的时候，在热力学中熵是无序分子运动紊乱程度的一种度量，代表物质无序运动的程度。我们也知道在没有外力的作用下，熵都是朝增加的方向移动。那么什么是信息熵呢？</p>
+<h1 id="信息熵的概念和名称的由来"><a href="#信息熵的概念和名称的由来" class="headerlink" title="信息熵的概念和名称的由来"></a>信息熵的概念和名称的由来</h1><p>信息熵的概念来源于克劳德 • 香农（Claude Shannon, 1916-2001）博士在1948年发表的论文《A mathematical theory of communications》。在这篇论文中他引进的“信息熵”概念举足轻重：它在数学上量化了通讯中“信息丢失”的本质。<br>香农最初并没有借用“熵”这个词汇来表达他关于信息传输中的“不确定性”的度量化，一开始他打算使用“information uncertainty”来表达这个概念，直到冯 • 诺依曼（John von Neumann, 1903-1957）给他提供建议。冯·诺依曼告诉他：就叫它熵吧，这有两个好理由。一是你的不确定性函数已在统计物理中用到过，在那里它就叫熵。第二个理由更重要：没人真正理解熵为何物，这就让你在任何时候都可能进能退，立于不败之地。<br>信息熵的计算公式：<br>$$H_{E}=-\sum_{x\in \chi }^{}p_{x}logp_{x}$$</p>
+<h1 id="信息熵公式的由来"><a href="#信息熵公式的由来" class="headerlink" title="信息熵公式的由来"></a>信息熵公式的由来</h1><p>信息熵是信息的不确定性(Uncertainty)的度量,不确定性越大,信息熵越大。</p>
+<p>一条信息消除的不确定性越大（即熵减越大），它蕴含的信息量越大。</p>
+<p>Shannon认为信息熵应有四大基本属性：</p>
+<pre><code>1.信息熵应该是非负的
+
+2.信息熵应该是随概率连续变化的，且发生概率越高的事件，其所携带的信息熵越低。
+
+3.当所有可能选择的概率Pi相等时（即1/n）,信息熵随总数n的增加而单调增加。即事件的可能选择越多，不确定性越大。
+
+4.当一个选择，可以分解为两个连续选择时。分解前后的熵值应该相等，不确定性相同。</code></pre><p>为什么会有这四个属性呢，这四个属性代表的含义是什么呢？</p>
+<pre><code>一，信息熵不是个负数，不然就是什么都不做信息会自动增长。
+
+二，信息量是连续依赖于概率变化，就是说，某一个概率变化了很小，比如0.0001，那么这个信息量不应该变化很大。
+
+三，假如每一个可能的结果出现的概率一样，那么对于可能结果数量多的那个事件，新信息有更大的潜力具有更大的信息量，因为初始状态下不确定性更大。
+
+四，信息量和信息量之间可以相加，假如你告诉我的第一句话的信息量是3，在第一句话的基础上又告诉我一句话，额外信息量是4，那么两句话信息量加起来应该等于7。</code></pre><p>我们再来看信息熵的公式。假设针对事件E, 每一个选择可能的概率为p1,p2,…,pn , 事件的信息熵为H。这时候计算信息熵的公式为：<br>$$H_{E}=-\sum_{x=1}^{n}p_{x}logp_{x}$$<br>我们先来看第三条信息熵随着选择增加而单调增加，而这些选择肯定是不相关的，也就是说,事件的联合概率分布是：<br>$$p(x_{0},x_{1}…,x_{n}) = \prod_{i=0}^{n}p(x_{i})$$<br>而事件信息熵是：<br>$$H(x_{0},x_{1}…,x_{n}) = \sum_{i=0}^{n}H(x_{i})$$<br>根据上面推导，再加上第二条连续变化的限制，我们很容易看出h(x)与p(x)的对数关系。</p>
+<p>因为要确保信息熵的非负性，所以要在前面加上负号。</p>
+<h1 id="另一种关于信息熵的理解"><a href="#另一种关于信息熵的理解" class="headerlink" title="另一种关于信息熵的理解"></a>另一种关于信息熵的理解</h1><p>另一个从信息编码角度的理解。信息论中，熵也代表着根据信息的概率分布对信息编码所需要的最短平均编码长度。<br>举个简单的例子来理解一下这件事情：假设有个考试作弊团伙，需要连续不断地向外传递4选1单选题的答案。直接传递ABCD的ascii码的话，每个答案需要8个bit的二进制编码，从传输的角度，这显然有些浪费。信息论最初要解决的，就是数据压缩和传输的问题，所以这个作弊团伙希望能用更少bit的编码来传输答案。很简单，答案只有4种可能性，所以二进制编码需要的长度就是取2为底的对数：<br>$$log_{2}(4)=2$$<br>2个bit就足够进行四个答案的编码了（00,01,10,11）。在上面这个例子中，其实隐含了一种假设，就是四个答案出现概率是相等的，均为p=1/4，所以编码需要长度的计算可以理解为如下的形式：<br>$$log_{2}(4)=-log_{2}(\frac{1}{4})=2$$<br>答案出现概率相等的例子可能并不贴近实际，在中国考试界，坊间传闻：“不知道选什么的时候就蒙C”，这个信息是可以帮助作弊团队改善编码长度的。假设A出现的概率不变仍为1/4，C出现的概率变成了1/2，B和D则分别是1/8：P(A)=1/4，P(B)=1/8，P(C)=1/2，P(D)=1/8。在这种情况下，考虑到传递答案的过程中，C出现的次数(概率)最高，所以可以为C用短一些的编码，而出现次数较少的B和D则可以考虑用长一些的编码。这样的话，平均下来，对于一定的信息总量，需要的编码总长度就会少一些。根据熵的定义的思路，对于出现概率为p的事件，考虑用长度为-log2(p)的二进制进行编码。所以考虑如下面的编码：</p>
+<pre><code>A: 10
+B: 110
+C: 0
+D: 111</code></pre><p>对照熵的公式来计算一下编码长度的期望值，也就是平均编码长度：<br>$$\sum_{x \in {A,B,C,D} }^{}p(x)log_{2}p(x)=\frac{1}{4}\times 2+\frac{1}{8}\times 3+\frac{1}{2}\times 1+\frac{1}{8}\times 3=1.75$$<br>再详细点，假设作弊团伙要传递200个答案出去。为了方便说明，这200个答案中ABCD出现的次数恰好都严格和其出现概率成比例，也就是A：50次，B：25次，C：100次，D：25次。所以传递200个答案一共需要的bit数是：那么平均下来每个答案耗费了350/200=1.75个bit编码长度。</p>
+<h1 id="信息熵的应用-决策树"><a href="#信息熵的应用-决策树" class="headerlink" title="信息熵的应用-决策树"></a>信息熵的应用-决策树</h1><p>机器学习中，决策树是一个预测模型；他代表的是对象属性与对象值之间的一种映射关系。树中每个节点表示某个对象，而每个分叉路径则代表的某个可能的属性值，而每个叶结点则对应从根节点到该叶节点所经历的路径所表示的对象的值。</p>
+<p>而信息熵则运用在每个节点如何选取特征进行分裂时。我们优先选则使信息熵下降最多的特征作为分裂节点。这个也很好理解，信息熵就是用来量化信息不确定性的，信息熵下降的越多，说明用这个特征分裂后的数据确定性增加的越多。</p>
+<p>举个简单的例子，有一个数据集里面有两类数据，各占50%。现在房地产市场比较火爆，咱们就把这个数据集称为优选二手房数据集，为了计算简单，这个数据集一半的房子是优选，一半不是。那么这个数据集的信息熵就是：<br>$$H=-\sum_{i=1}^{2}p(i)log_{2}p(i) =-\frac{1}{2}\times (-1)-\frac{1}{2}\times (-1)=1$$<br>这时我们看到这个数据集肯定也很疑惑，凭啥有的是优选，有的就不是，什么标准，所以此时这个数据集的信息熵是最高的，因为不确定性的因素太多。</p>
+<p>我们又得知这些二手房有五个属性，是否是好学区，是否靠近地铁站，是否是精装修，是否是2000年后的房屋，是否是满五唯一。<br>在这五个属性里，这些房子的概率分布如下：</p>
+<pre><code>好学区：    优选0.9   非优选0.1
+近地铁：    优选0.7   非优选0.3
+精装修：    优选0.6   非优选0.4
+2000年后：  优选0.6   非优选0.4
+满五唯一：   优选0.8   非优选0.2</code></pre><p>我们这时可以计算这五种属性各自的条件熵了。</p>
+<p>好学区：<br>$$H_{好学区}=-\sum_{i=1}^{2}p(i)log_{2}p(i) =-\frac{1}{10}\times log_{2}\frac{1}{10} -\frac{9}{10}\times log_{2}\frac{9}{10}=0.4690$$<br>近地铁：<br>$$H_{近地铁}=-\sum_{i=1}^{2}p(i)log_{2}p(i) =-\frac{3}{10}\times log_{2}\frac{3}{10} -\frac{7}{10}\times log_{2}\frac{7}{10}=0.8813$$<br>精装修：<br>$$H_{精装修}=-\sum_{i=1}^{2}p(i)log_{2}p(i) =-\frac{4}{10}\times log_{2}\frac{4}{10} -\frac{6}{10}\times log_{2}\frac{6}{10}=0.9709$$<br>2000年后:<br>$$H_{2000年后}=-\sum_{i=1}^{2}p(i)log_{2}p(i) =-\frac{4}{10}\times log_{2}\frac{4}{10} -\frac{6}{10}\times log_{2}\frac{6}{10}=0.9709$$<br>满五唯一:<br>$$H_{满五唯一}=-\sum_{i=1}^{2}p(i)log_{2}p(i) =-\frac{2}{10}\times log_{2}\frac{2}{10} -\frac{8}{10}\times log_{2}\frac{8}{10}=0.7219$$<br>我们这是来计算属性的信息增益，就是属性包含的信息量，肯定是让信息熵减少越多的属性，信息增益越大，计算方式也很简单，就是数据的信息熵减去属性的条件熵。</p>
+<p>信息增益：</p>
+<pre><code>好学区：    0.5310
+近地铁：    0.1187
+精装修：    0.0291
+2000年后：  0.0291
+满五唯一：   0.2781</code></pre><p>可以看到好学区的信息增益最大，也就是说选择好学区这个属性作为分裂节点，整个数据集的确定性增长的最多。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>zhanghao
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://cxvhacker.github.io/2020/11/08/zhanghao/%E4%BF%A1%E6%81%AF%E7%86%B5%E7%AE%80%E4%BB%8B/" title="信息熵简介">https://cxvhacker.github.io/2020/11/08/zhanghao/信息熵简介/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-CN" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E4%BF%A1%E6%81%AF%E7%86%B5%E7%AE%80%E4%BB%8B/" rel="tag"># 信息熵简介</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/11/06/czk/upx%E8%84%B1%E5%A3%B3/" rel="prev" title="upx脱壳总结">
+      <i class="fa fa-chevron-left"></i> upx脱壳总结
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/11/29/sunyu/cve-2017-0199/" rel="next" title="CVE-2017-0199">
+      CVE-2017-0199 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#信息熵的概念和名称的由来"><span class="nav-number">2.</span> <span class="nav-text">信息熵的概念和名称的由来</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#信息熵公式的由来"><span class="nav-number">3.</span> <span class="nav-text">信息熵公式的由来</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#另一种关于信息熵的理解"><span class="nav-number">4.</span> <span class="nav-text">另一种关于信息熵的理解</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#信息熵的应用-决策树"><span class="nav-number">5.</span> <span class="nav-text">信息熵的应用-决策树</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">vhacker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">vhacker</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '399537cdb54292e355a4',
+      clientSecret: '1d1c2f5009f3f64de8bdb96fe07481045f835d06',
+      repo        : 'cxvhacker.github.io',
+      owner       : 'cxvhacker',
+      admin       : ['cxvhacker'],
+      id          : '9cadeb6ef86706c144641981e838418b',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>

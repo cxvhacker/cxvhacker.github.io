@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"cxvhacker.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="最近由于工作的需要，先是逆向分析了PeTite2.4的壳，了解了壳在程序开头做了那些事情，最后代码实现了自动脱壳； 关于脱壳的文章，网上一搜一大推，但都是讲解脱壳方法的,分析壳代码的很少；这里做个记录，希望后面温故还能能记忆如新；">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PEtite2.4脱壳">
+<meta property="og:url" content="https://cxvhacker.github.io/2020/12/18/czk/PEtite2.4%E8%84%B1%E5%A3%B3/index.html">
+<meta property="og:site_name" content="辰信安全基地">
+<meta property="og:description" content="最近由于工作的需要，先是逆向分析了PeTite2.4的壳，了解了壳在程序开头做了那些事情，最后代码实现了自动脱壳； 关于脱壳的文章，网上一搜一大推，但都是讲解脱壳方法的,分析壳代码的很少；这里做个记录，希望后面温故还能能记忆如新；">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/PEtite2.4/packinfo.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/PEtite2.4/start.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/PEtite2.4/decrypt.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/PEtite2.4/getbit.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/PEtite2.4/520000start.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/PEtite2.4/decrypt2.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/PEtite2.4/520340.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/PEtite2.4/set0.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/PEtite2.4/repaire8e9.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/PEtite2.4/repaitINT.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/PEtite2.4/c10424.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/PEtite2.4/oepoffset.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/PEtite2.4/checkpeheader.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/PEtite2.4/repairff15.png">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/czk/PEtite2.4/retoep.png">
+<meta property="article:published_time" content="2020-12-18T00:00:00.000Z">
+<meta property="article:modified_time" content="2021-01-21T09:45:28.028Z">
+<meta property="article:author" content="vhacker">
+<meta property="article:tag" content="脱壳">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cxvhacker.github.io/pic/czk/PEtite2.4/packinfo.png">
+
+<link rel="canonical" href="https://cxvhacker.github.io/2020/12/18/czk/PEtite2.4%E8%84%B1%E5%A3%B3/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>PEtite2.4脱壳 | 辰信安全基地</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">辰信安全基地</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">严肃工作  活泼生活</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://cxvhacker.github.io/2020/12/18/czk/PEtite2.4%E8%84%B1%E5%A3%B3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="vhacker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="辰信安全基地">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          PEtite2.4脱壳
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-12-18 00:00:00" itemprop="dateCreated datePublished" datetime="2020-12-18T00:00:00+00:00">2020-12-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-01-21 09:45:28" itemprop="dateModified" datetime="2021-01-21T09:45:28+00:00">2021-01-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/PETite2-4%E8%84%B1%E5%A3%B3/" itemprop="url" rel="index"><span itemprop="name">PETite2.4脱壳</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <pre><code>最近由于工作的需要，先是逆向分析了PeTite2.4的壳，了解了壳在程序开头做了那些事情，最后代码实现了自动脱壳；
+关于脱壳的文章，网上一搜一大推，但都是讲解脱壳方法的,分析壳代码的很少；这里做个记录，希望后面温故还能能记忆如新；</code></pre><a id="more"></a>
+
+<h2 id="PETite2-4壳原理："><a href="#PETite2-4壳原理：" class="headerlink" title="PETite2.4壳原理："></a>PETite2.4壳原理：</h2><p>​    壳开头会申请一块堆内存, 然后执行解密函数，把主要壳代码解密到内存中，最后转入其中执行主要壳功能；堆代码开头先把解密函数拷贝过来，然后在堆内存尾部取一个解密数组结构，遍历每一个成员，根据里面的源RVA和目的RVA，以及长度，调用解密函数解密；最后处理代码中的E8，E9指令的跳转修复，导入表，原始入口点解析恢复，代码校验一类的事情；</p>
+<h2 id="1-样本概述"><a href="#1-样本概述" class="headerlink" title="1.样本概述"></a>1.样本概述</h2><h3 id="1-1-样本信息"><a href="#1-1-样本信息" class="headerlink" title="1.1 样本信息"></a>1.1 样本信息</h3><p>大小: 11932 字节<br>MD5: BCEAEEFF17874D3323237BE240D9C5E4<br>SHA1: F8A5A778AA7448DBCA3892B6D74648F92F694835<br>CRC32: 4E0DE219</p>
+<h3 id="1-2-分析环境和工具"><a href="#1-2-分析环境和工具" class="headerlink" title="1.2 分析环境和工具"></a>1.2 分析环境和工具</h3><p>环境：WIN732位</p>
+<p>工具: OD,   x32dbg </p>
+<h2 id=""><a href="#" class="headerlink" title=""></a></h2><h2 id="2-详细分析："><a href="#2-详细分析：" class="headerlink" title="2.详细分析："></a>2.详细分析：</h2><h3 id="2-1-查壳"><a href="#2-1-查壳" class="headerlink" title="2.1 查壳"></a>2.1 查壳</h3><p><img src="/pic/czk/PEtite2.4/packinfo.png" alt="image-20201106165858263"></p>
+<h3 id="2-2-解密壳代码"><a href="#2-2-解密壳代码" class="headerlink" title="2.2 解密壳代码"></a>2.2 解密壳代码</h3><p>   申请0X6D3大小的堆内存，以 EBP+1448h 作为源，0x383h 为长度，进行壳代码的解密；</p>
+<p>​    sub_4017BF为解密函数；</p>
+<p>​    seg000:00401785处的 0A6d56304h 是PE Header校验CRC；</p>
+<p>​    </p>
+<p><img src="/pic/czk/PEtite2.4/start.png" alt="image-20201106165803647"></p>
+<p>解密函数：</p>
+<p>​    主要逻辑就是从esi取值 异或长度(传进来的ebx)，然后ebx递减，写入edi(edi指向上面申请到的堆内存);</p>
+<p>具体的指令就不一一赘述了，直接看我逆成c语言的简版形式, 这样看着方便些；</p>
+<p><img src="/pic/czk/PEtite2.4/decrypt.png" alt="image-20201106171129764"></p>
+<p>这里提一下sub_401857函数，很变态，因为用到了adc指令，带进位加法，这段指令很多壳中都有使用，个别论坛里面也有这个函数的c形式，这里我直接搬过来了；</p>
+<p><img src="/pic/czk/PEtite2.4/getbit.png" alt="image-20201106171921612"></p>
+<p>下面是整理的简版c代码, 理解个大体逻辑意思吧。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><span class="line">int getbit(unsigned int *pcom_dword, unsigned int **ppsrc)</span><br><span class="line">&#123;</span><br><span class="line">    int temp;</span><br><span class="line">    temp &#x3D; ((*pcom_dword)&gt;&gt;31)&amp;1; &#x2F;&#x2F;得到 符号位</span><br><span class="line">    (*pcom_dword) &lt;&lt;&#x3D; 1;</span><br><span class="line">    if(0 !&#x3D; (*pcom_dword))</span><br><span class="line">    &#123;</span><br><span class="line">        *pcom_dword &#x3D; **ppsrc;</span><br><span class="line">        temp &#x3D; ((*pcom_dword)&gt;&gt;31)&amp;1;</span><br><span class="line">        (*pcom_dword) &lt;&lt;&#x3D; 1;</span><br><span class="line">        *pcom_dword +&#x3D; ((unsigned int)*ppsrc &gt;&#x3D; 0xFFFFFFFC ? 0 : 1);</span><br><span class="line">        (unsigned int)*ppsrc +&#x3D; 4;</span><br><span class="line">    &#125;</span><br><span class="line">    return temp;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">src	&#x3D;	0x401448h</span><br><span class="line">declen &#x3D; 0x383h</span><br><span class="line"></span><br><span class="line">sub_401857(psrc, pdst, declen)</span><br><span class="line">&#123;</span><br><span class="line">	index &#x3D; 0;</span><br><span class="line">	lastlen	&#x3D;	declen;</span><br><span class="line">	edx 	&#x3D;	0;</span><br><span class="line">	ecx		&#x3D;	0;	</span><br><span class="line">	do&#123;		</span><br><span class="line">		*(char*)pdst++	&#x3D; (*(char*)psrc++ ^ lastlen);</span><br><span class="line">		lastlen--;</span><br><span class="line">__loop:</span><br><span class="line">		if( lastlen &lt;&#x3D; 0 )</span><br><span class="line">		&#123;</span><br><span class="line">			break;</span><br><span class="line">		&#125;</span><br><span class="line">		if( getbit(&amp;edx, &amp;psrc) &#x3D;&#x3D;0 ) </span><br><span class="line">		&#123;</span><br><span class="line">			continue;</span><br><span class="line">		&#125;</span><br><span class="line">		ecx++;</span><br><span class="line">		do&#123;</span><br><span class="line">			temp &#x3D; getbit(&amp;edx, &amp;psrc);</span><br><span class="line">			ecx  &lt;&lt;&#x3D; 1;</span><br><span class="line">			ecx  +&#x3D; temp;</span><br><span class="line">		&#125;while( getbit(&amp;edx, &amp;psrc) )</span><br><span class="line">		ecx -&#x3D; 3;</span><br><span class="line">		if( ecx &lt; 0 )</span><br><span class="line">		&#123;			</span><br><span class="line">			eax &#x3D; var14;</span><br><span class="line">			ecx++;</span><br><span class="line">		&#125;</span><br><span class="line">		else&#123;</span><br><span class="line">			eax	&#x3D; ecx;</span><br><span class="line">			ecx &#x3D; 5;</span><br><span class="line">			do&#123;</span><br><span class="line">				temp &#x3D; getbit(&amp;edx, &amp;psrc);</span><br><span class="line">				eax &lt;&lt;&#x3D; 1;</span><br><span class="line">				eax +&#x3D; temp;</span><br><span class="line">			&#125;while( ecx-- )			</span><br><span class="line">			</span><br><span class="line">			eax &#x3D; ~eax;</span><br><span class="line">		    ebp +&#x3D; 1 + ((eax &gt; -3A0h) : 0 ? 1);</span><br><span class="line">		    ebp +&#x3D; 1 + ((eax &gt; -3FA0h) : 0 ? 1);</span><br><span class="line">		    var14 &#x3D; eax;</span><br><span class="line">		&#125;		</span><br><span class="line">		temp &#x3D; getbit(&amp;edx, &amp;psrc);</span><br><span class="line">		ecx &lt;&lt;&#x3D;1;</span><br><span class="line">		ecx +&#x3D; temp;</span><br><span class="line">		temp &#x3D; getbit(&amp;edx, &amp;psrc);</span><br><span class="line">		ecx &lt;&lt;&#x3D;1;</span><br><span class="line">		ecx +&#x3D; temp;</span><br><span class="line">		if( ecx &#x3D;&#x3D; 0 )</span><br><span class="line">		&#123;</span><br><span class="line">			ecx++;</span><br><span class="line">			do&#123;</span><br><span class="line">				temp &#x3D; getbit(&amp;edx, &amp;psrc);</span><br><span class="line">				ecx  &lt;&lt;&#x3D; 1;</span><br><span class="line">				ecx  +&#x3D; temp;</span><br><span class="line">			&#125;while( getbit(&amp;edx, &amp;psrc) &lt; 0)</span><br><span class="line">			ecx +&#x3D; 2;</span><br><span class="line">		&#125;</span><br><span class="line">		ecx +&#x3D; ebp;</span><br><span class="line">		lastlen	-&#x3D; ecx;</span><br><span class="line">		if( lastlen &lt; 0 )</span><br><span class="line">			break;</span><br><span class="line">		memcpy(pst, pdst+eax, ecx);</span><br><span class="line">		pdst	+&#x3D; ecx;</span><br><span class="line">		goto __loop;</span><br><span class="line">		</span><br><span class="line">	&#125;while( 1 );	</span><br><span class="line">__end:</span><br><span class="line">	return ;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="2-3-堆壳代码执行"><a href="#2-3-堆壳代码执行" class="headerlink" title="2.3 堆壳代码执行"></a>2.3 堆壳代码执行</h3><p>我直接动态调试了，注意此时进入堆时的寄存器以及堆栈， 堆是下面这个样子的:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">		 001EFBC8   A6D56304 </span><br><span class="line">$ &#x3D;&#x3D;&gt;    001EFBCC   00000000  </span><br><span class="line">$+4      001EFBD0   00000000  </span><br><span class="line">$+8      001EFBD4   001EFBF4  </span><br><span class="line">$+C      001EFBD8   001EFBEC  </span><br><span class="line">$+10     001EFBDC   7FFDB000  </span><br><span class="line">$+14     001EFBE0 &lt; 013D1779  92de1c7.EntryPoint</span><br><span class="line">$+18     001EFBE4   00520000  </span><br><span class="line">$+1C     001EFBE8   013D4000  92de1c7.013D4000</span><br><span class="line">$+20     001EFBEC   77973C45  返回到 kernel32.77973C45 自 ???</span><br></pre></td></tr></table></figure>
+
+<p>ebp是开头 lea     ebp, [eax-4000h]  指定的模块基址；</p>
+<p>其中520000是申请的堆基址</p>
+<p>以下是解密后的堆内存中的代码, 其中框中的会把sub_17bf解密函数拷贝到本模块的520383处；0x340是指向解密结构数组的偏移；</p>
+<p><img src="/pic/czk/PEtite2.4/520000start.png" alt="image-20201106173958488"></p>
+<p>下面就是以一个结构数组进行代码解密恢复到原始PE处, 有调用520383解密函数，参数ebx, esi, edi都是结构数组中的数据；</p>
+<p><img src="/pic/czk/PEtite2.4/decrypt2.png" alt="image-20201106174352455"></p>
+<p>其中结构数组位置在520340处；怕排板乱了直接用图片了，如下:</p>
+<p><img src="/pic/czk/PEtite2.4/520340.png" alt="image-20201106174807670"></p>
+<p>这个结构体数据最后一个成员是全零的，未贴上；</p>
+<p>当DstRVA和SrcRVA一样时有个交叉处理的，会使用从SrcRVA拷贝copySize大小到临时位置；</p>
+<p>这个结构体数组结合上面解密函数就是下面的三个步骤:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">ebx : 解密长度</span><br><span class="line">esi : SrcRva+ImageBase</span><br><span class="line">edi : DstRva</span><br><span class="line"></span><br><span class="line">解密逻辑：</span><br><span class="line">[esi] xor len  --&gt;[edi]</span><br><span class="line"></span><br><span class="line">[13d1414h]xor  --&gt;[13d3000h]   解密后剩余清零</span><br><span class="line">[13d1250h]xor  --&gt;[13d2000h]</span><br><span class="line">[13d1000h]xor  --&gt;[13d1000h]</span><br><span class="line">注:其中13d0000是动态调试时样本主PE的加载基址;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>解密后目的rva块剩余未解密的空间会用0填充；然后加 15h字节，处理下一个数组成员；</p>
+<p><img src="/pic/czk/PEtite2.4/set0.png" alt="image-20201106175720825"></p>
+<p>根据结构体数组对象的第四个DstSize成员, 决定需不需要修复 E8, E9指令；</p>
+<p>最后一个字节作为控制位，shr ecx,1 进CF标志位，紧接着jnb指令判断CF决定是否跳转;</p>
+<p> 这里解密完第三个直接进行E8,e9指令修复了；</p>
+<p><img src="/pic/czk/PEtite2.4/repaire8e9.png" alt="image-20201106180521592"></p>
+<p>这段的主要逻辑是修复导入表，其中2B0EFA5Ch是加密的入口点；</p>
+<p>其中导入的函数的修复也隐含了入口点的解密，会根据获取到的函数地址范围对2B0EFA5Ch进行运算；</p>
+<p><img src="/pic/czk/PEtite2.4/repaitINT.png" alt="image-20201106180844112"></p>
+<p><img src="/pic/czk/PEtite2.4/c10424.png" alt="image-20201106181102658"></p>
+<p>其中调用系统函数时，会构建成下面这个样子调用；</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">push D124963B            </span><br><span class="line"></span><br><span class="line">rol dword ptr ss:[esp],59</span><br><span class="line"></span><br><span class="line">ret</span><br></pre></td></tr></table></figure>
+
+
+
+<p>入口点计算中间过程:</p>
+<p><img src="/pic/czk/PEtite2.4/oepoffset.png" alt="image-20201106181337604"></p>
+<p>这里有个对PE.NtHeader 的校验:</p>
+<p><img src="/pic/czk/PEtite2.4/checkpeheader.png" alt="image-20201106181824634"></p>
+<p>修复FF15call:</p>
+<p><img src="/pic/czk/PEtite2.4/repairff15.png" alt="image-20201106181942706"></p>
+<p>最后恢复内存属性，是解密数组结构成员最后一成员指定的；</p>
+<p>最下面就是获取最后的OEP了,在edx中，最后的jmp前 push的就是返回地址，调用玩VirtualFree释放完本内存，就跳过去了；至此结束；</p>
+<p><img src="/pic/czk/PEtite2.4/retoep.png" alt="image-20201106182121060"></p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>czk
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://cxvhacker.github.io/2020/12/18/czk/PEtite2.4%E8%84%B1%E5%A3%B3/" title="PEtite2.4脱壳">https://cxvhacker.github.io/2020/12/18/czk/PEtite2.4脱壳/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-CN" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E8%84%B1%E5%A3%B3/" rel="tag"># 脱壳</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/11/29/sunyu/cve-2017-0199/" rel="prev" title="CVE-2017-0199">
+      <i class="fa fa-chevron-left"></i> CVE-2017-0199
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/12/21/zhanghao/l1%E5%92%8Cl2%E6%AD%A3%E5%88%99/" rel="next" title="L1正则化和L2正则化">
+      L1正则化和L2正则化 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#PETite2-4壳原理："><span class="nav-number">1.</span> <span class="nav-text">PETite2.4壳原理：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-样本概述"><span class="nav-number">2.</span> <span class="nav-text">1.样本概述</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-样本信息"><span class="nav-number">2.1.</span> <span class="nav-text">1.1 样本信息</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-分析环境和工具"><span class="nav-number">2.2.</span> <span class="nav-text">1.2 分析环境和工具</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#"><span class="nav-number">3.</span> <span class="nav-text"></span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-详细分析："><span class="nav-number">4.</span> <span class="nav-text">2.详细分析：</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-查壳"><span class="nav-number">4.1.</span> <span class="nav-text">2.1 查壳</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-2-解密壳代码"><span class="nav-number">4.2.</span> <span class="nav-text">2.2 解密壳代码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-3-堆壳代码执行"><span class="nav-number">4.3.</span> <span class="nav-text">2.3 堆壳代码执行</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">vhacker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">vhacker</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '399537cdb54292e355a4',
+      clientSecret: '1d1c2f5009f3f64de8bdb96fe07481045f835d06',
+      repo        : 'cxvhacker.github.io',
+      owner       : 'cxvhacker',
+      admin       : ['cxvhacker'],
+      id          : '3c30b844a050684bf92abd6d8be494c4',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
